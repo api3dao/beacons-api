@@ -1,7 +1,7 @@
 {
   "providers": {
     "1": "https://something",
-    "3": "https://something",
+    "3": "https://something"
   },
   "deployments": {
     "30": "0xCC5005Bd08b8882c9A132C0067E7D3f79796C251",
