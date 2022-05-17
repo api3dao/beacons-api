@@ -1,0 +1,22 @@
+# Package directories
+/node_modules
+/*/node_modules
+/dist
+/lib
+/.build
+/.serverless
+
+# IDE specific files
+.vscode
+.idea
+
+# ENV variables and secrets
+.env
+aws.env
+
+# Config files
+**/airkeeper.json
+**/config.json
+**/secrets.env
+/serverless.yml
+/telemetryConfig.json

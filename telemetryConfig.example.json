@@ -1,0 +1,25 @@
+{
+  "providers": {
+    "1": "https://something",
+    "3": "https://something",
+  },
+  "deployments": {
+    "30": "0xCC5005Bd08b8882c9A132C0067E7D3f79796C251",
+    "56": "0x8B0A67D060C86919Ae76Ca3FA69c68Ff98E85c3c",
+    "137": "0xd7CA5BD7a45985D271F216Cb1CAD82348464f6d5",
+    "43114": "0x291a11cbbC441201562A6418Fd11bBeb0675b4e4"
+  },
+  "opsGenieConfig": {
+    "responders": [
+      {
+        "type": "team",
+        "id": "00000000-0000-0000-0000-000000000000"
+      }
+    ]
+  },
+  "headers": {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Credentials": true,
+    "content-type": "application/json"
+  }
+}

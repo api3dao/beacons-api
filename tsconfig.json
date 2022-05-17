@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "declaration": true,
+    "downlevelIteration": true,
+    "esModuleInterop": true,
+    "lib": ["es2015"],
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "sourceMap": true,
+    "strict": true,
+    "target": "es5",
+    "baseUrl": "./",
+    "outDir": "dist",
+    "skipLibCheck": true
+  },
+  "exclude": ["node_modules", "dist", "dist/**/*", "node_modules/**/*"],
+  "include": ["./src/**/*", "./deploy/**/*", "./scripts/**/*", "./hardhat.config.ts", "./src/**/*", "./test/**/*"]
+}

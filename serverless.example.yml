@@ -1,0 +1,74 @@
+service: beacon-dashboard-api
+
+plugins:
+  - serverless-plugin-typescript
+  - serverless-api-gateway-caching
+
+package:
+  patterns:
+    - ./telemetryConfig.json
+
+custom:
+  apiGatewayCaching:
+    enabled: true
+
+provider:
+  name: aws
+  region: us-east-1
+  stage: production # this can be any string, but it cant be too long due to restrictions on derived name lengths
+  runtime: nodejs14.x
+  architecture: arm64 # arm64 is cheaper for most operations, especially I/O
+  logRetentionInDays: 7
+  lambdaHashingVersion: '20201221'
+
+  # The gateway should be of type v1 and REST
+  # A custom domain name can be linked (which is why these values are not auto generated on deployment)
+  apiGateway:
+    restApiId: '2x1d45678j' # this is the first value in the API gateway path on the API gateway page
+    restApiRootResourceId: 'gea37fa49a' # this is the second value in said path
+    minimumCompressionSize: 1024 # minimum payload size in bytes before compression is used
+
+    # See https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-apigateway-usageplan-quotasettings.html
+    usagePlan:
+      quota:
+        # The limit of requests per period
+        limit: 5000
+        # the offset number of days from Sunday (0), 1 is Monday
+        offset: 1
+        period: WEEK
+      throttle:
+        burstLimit: 60
+        rateLimit: 30
+
+functions:
+  chain_value_data_point:
+    handler: src/on-chain-value.chainValueDataPoint
+    timeout: 15
+    memorySize: 128
+    events:
+      - http:
+          path: beacons/on_chain_value
+          method: get
+          caching:
+            enabled: true
+            ttlInSeconds: 120
+            cacheKeyParameters: # changes in these query parameters dictate whether a cached value is used
+              - name: request.path.chainId
+              - name: request.path.dataFeedId
+              - name: request.path.airnodeAddress
+              - name: request.path.templateId
+              - name: request.path.dapiName
+  last_transactions:
+    handler: src/last-transactions.lastTransactions
+    timeout: 30
+    memorySize: 256
+    events:
+      - http:
+          path: beacons/last_transactions
+          method: get
+          caching:
+            enabled: true
+            ttlInSeconds: 120
+            cacheKeyParameters:
+              - name: request.path.chainId
+              - name: request.path.beaconId
