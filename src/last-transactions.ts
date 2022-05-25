@@ -20,6 +20,12 @@ const transactions: Record<string, ParsedLog[]> = Object.fromEntries(
 );
 let lastUpdate = 0;
 
+const transactionSortFunction = (a: ParsedLog, b: ParsedLog) => {
+  if (a.blockNumber > b.blockNumber) return -1;
+  if (a.blockNumber > b.blockNumber) return 1;
+  return 0;
+};
+
 export const refreshTransactions = async () => {
   const settledLogRetrieval = await Promise.allSettled(
     Object.entries(config.deployments).map(async ([chainId, dapiServer]) => {
@@ -67,6 +73,21 @@ export const refreshTransactions = async () => {
     .forEach((logWithChainId) => {
       transactions[logWithChainId.chainId.toString()].push(...logWithChainId.events);
     });
+
+  Object.entries(transactions).forEach(([chainId, transactions]) => {
+    // We need this for caching
+    // eslint-disable-next-line functional/immutable-data
+    transactions[chainId] = transactions[chainId]
+      .sort(transactionSortFunction)
+      .slice(0, 5)
+      // Trim out only what we need - permissively
+      .map(({ blockNumber, parsedLog, topics, transactionHash }: ParsedLog) => ({
+        blockNumber,
+        parsedLog,
+        topics,
+        transactionHash,
+      }));
+  });
 
   lastUpdate = Date.now();
 };
