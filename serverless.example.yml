@@ -72,3 +72,4 @@ functions:
             cacheKeyParameters:
               - name: request.path.chainId
               - name: request.path.beaconId
+              - name: request.path.transactionCount

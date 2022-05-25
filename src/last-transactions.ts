@@ -71,25 +71,19 @@ export const refreshTransactions = async () => {
     .filter((log) => log.status === 'fulfilled' && log.value)
     .map((log) => (log as PromiseFulfilledResult<any>).value! as ParsedLogWithChainId)
     .forEach((logWithChainId) => {
-      transactions[logWithChainId.chainId.toString()].push(...logWithChainId.events);
+      const sortedLogWithChainId = logWithChainId.events.sort(transactionSortFunction).map(
+        ({ blockNumber, parsedLog, topics, transactionHash }: ParsedLog) =>
+          ({
+            blockNumber,
+            parsedLog,
+            topics,
+            transactionHash,
+          } as ParsedLog)
+      );
+      transactions[logWithChainId.chainId.toString()].push(...sortedLogWithChainId);
+
+      lastUpdate = Date.now();
     });
-
-  Object.entries(transactions).forEach(([chainId, transactions]) => {
-    // We need this for caching
-    // eslint-disable-next-line functional/immutable-data
-    transactions[chainId] = transactions[chainId]
-      .sort(transactionSortFunction)
-      .slice(0, 5)
-      // Trim out only what we need - permissively
-      .map(({ blockNumber, parsedLog, topics, transactionHash }: ParsedLog) => ({
-        blockNumber,
-        parsedLog,
-        topics,
-        transactionHash,
-      }));
-  });
-
-  lastUpdate = Date.now();
 };
 
 export const lastTransactions: APIGatewayProxyHandler = async (event): Promise<any> => {
@@ -126,6 +120,9 @@ export const lastTransactions: APIGatewayProxyHandler = async (event): Promise<a
   const beaconId = event.queryStringParameters?.beaconId;
   const chainId = event.queryStringParameters?.chainId;
 
+  const parsedTransactionCountLimit = parseInt(event.queryStringParameters?.transactionCountLimit ?? '5');
+  const transactionCountLimit = !isNaN(parsedTransactionCountLimit) ? parsedTransactionCountLimit : 5;
+
   if (Date.now() - lastUpdate > 60_000) {
     try {
       await refreshTransactions();
@@ -140,7 +137,9 @@ export const lastTransactions: APIGatewayProxyHandler = async (event): Promise<a
   }
 
   const txesPerChainId = transactions[chainId];
-  const payload = txesPerChainId.filter((logEvent) => logEvent.parsedLog.args[0] === beaconId);
+  const payload = txesPerChainId
+    .filter((logEvent) => logEvent.parsedLog.args[0] === beaconId)
+    .slice(0, transactionCountLimit);
 
   return {
     statusCode: 200,

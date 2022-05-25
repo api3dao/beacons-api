@@ -1,6 +1,5 @@
 import path, { join } from 'path';
 import fs, { readdirSync, readFileSync } from 'fs';
-import { keyBy } from 'lodash';
 import { GlobalConfig } from './types';
 
 export const doTimeout = (interval: number) => new Promise((resolve) => setTimeout(() => resolve(null), interval));
@@ -30,6 +29,3 @@ export const readJsonDirectoryAsArray = (directoryPath: string): FilePayload[] =
 interface FilePayload {
   readonly filename: string;
 }
-
-export const readJsonDirectoryAsObject = (directoryPath: string): Record<string, {}> =>
-  keyBy(readJsonDirectoryAsArray(directoryPath), 'filename');
