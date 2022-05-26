@@ -2,6 +2,7 @@ import { APIGatewayProxyHandler } from 'aws-lambda';
 import { DapiServer__factory } from '@api3/airnode-protocol-v1';
 import { ethers } from 'ethers';
 import { go } from '@api3/airnode-utilities';
+import { contracts } from '@api3/operations/chain/deployments/references.json';
 import { getGlobalConfig, makeError } from './utils';
 
 const config = getGlobalConfig();
@@ -35,7 +36,7 @@ export const chainValueDataPoint: APIGatewayProxyHandler = async (event): Promis
     };
   }
 
-  const dapiServerAddress = config.deployments[chainId];
+  const dapiServerAddress = contracts.DapiServer[chainId];
   if (!dapiServerAddress) {
     return {
       statusCode: 500,

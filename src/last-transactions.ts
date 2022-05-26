@@ -4,6 +4,7 @@ import { DapiServer__factory } from '@api3/airnode-protocol-v1';
 import { APIGatewayProxyHandler } from 'aws-lambda';
 import { Log } from '@ethersproject/abstract-provider';
 import { z } from 'zod';
+import { contracts } from '@api3/operations/chain/deployments/references.json';
 import { getGlobalConfig, makeError } from './utils';
 
 export const evmBeaconIdSchema = z.string().regex(/^0x[a-fA-F0-9]{64}$/);
@@ -16,7 +17,7 @@ type ParsedLog = Log & { parsedLog: ethers.utils.LogDescription };
 type ParsedLogWithChainId = { events: ParsedLog[]; chainId: string };
 
 const transactions: Record<string, ParsedLog[]> = Object.fromEntries(
-  Object.keys(config.deployments).map((chainId) => [chainId, []])
+  Object.keys(contracts.DapiServer).map((chainId) => [chainId, []])
 );
 let lastUpdate = 0;
 
@@ -28,7 +29,7 @@ const transactionSortFunction = (a: ParsedLog, b: ParsedLog) => {
 
 export const refreshTransactions = async () => {
   const settledLogRetrieval = await Promise.allSettled(
-    Object.entries(config.deployments).map(async ([chainId, dapiServer]) => {
+    Object.entries(contracts.DapiServer).map(async ([chainId, dapiServer]) => {
       const providerUrl = config.providers[chainId];
       const provider = new ethers.providers.JsonRpcProvider(providerUrl, { name: chainId, chainId: parseInt(chainId) });
 

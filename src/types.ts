@@ -2,7 +2,6 @@ import { APIGatewayProxyEvent, APIGatewayProxyResult, Handler } from 'aws-lambda
 
 export interface GlobalConfig {
   readonly providers: Record<string, string>;
-  readonly deployments: Record<string, string>;
   readonly opsGenieConfig: OpsGenieConfig;
   readonly headers: Record<string, string>;
 }
