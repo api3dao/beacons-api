@@ -73,3 +73,10 @@ functions:
               - name: request.path.chainId
               - name: request.path.beaconId
               - name: request.path.transactionCount
+  validateAndSend:
+    handler: validate-and-send.validateAndSend
+    events:
+      - httpApi:
+          path: /email
+          method: post
+
