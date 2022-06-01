@@ -73,16 +73,12 @@ functions:
               - name: request.path.chainId
               - name: request.path.beaconId
               - name: request.path.transactionCount
-  email:
-    handler: send-email.email
+
+  validateAndSend:
+    handler: validate-and-send.validateAndSend
+    timeout: 10
+    memorySize: 128
     events:
       - httpApi:
           path: /email
           method: post
-  validateToken:
-    handler: recaptcha.validateToken
-    events:
-      - httpApi:
-          path: /validate
-          method: post
-
