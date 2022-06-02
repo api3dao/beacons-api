@@ -39,7 +39,7 @@ export const refreshTransactions = async () => {
       const [err, rawLogs] = await go(
         async () =>
           await provider.getLogs({
-            fromBlock: (subBlock ?? (await provider.getBlock('latest')).number - 2000) + 1,
+            fromBlock: (subBlock ?? (await provider.getBlock('latest')).number - 10000) + 1,
             toBlock: 'latest',
             address: dapiServer,
           }),
