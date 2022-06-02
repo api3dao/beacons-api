@@ -7,10 +7,11 @@ interface Data {
   userName: string;
   token: string;
   order: string;
+  groupName?: string;
 }
 
 export const validateAndSend = async (event: { body: Data }) => {
-  const { token, contactOption, userName, order } = event.body;
+  const { token, contactOption, userName, order, groupName } = event.body;
 
   if (!token || !contactOption || !userName || !order) {
     return {
@@ -38,7 +39,7 @@ export const validateAndSend = async (event: { body: Data }) => {
       ),
     };
   }
-  await sendEmail(contactOption, userName, order);
+  await sendEmail(contactOption, userName, order, groupName);
 };
 
 const validateToken = async (token: string) => {
@@ -59,24 +60,31 @@ const validateToken = async (token: string) => {
   }
 };
 
-const sendEmail = async (contactOption: string, userName: string, order: string) => {
+const sendEmail = async (contactOption: string, userName: string, order: string, groupName?: string) => {
   if (!process.env.SENDGRID_API_KEY) {
     console.error('No SENDGRID_API_KEY ENV found.');
     return;
   }
   sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
+  // need to check all email env before sending email
+
   try {
     await sgMail.send({
-      to: process.env.API3_SENDER_EMAIL,
-      from: process.env.API3_RECEIVER_EMAIL,
-      subject: 'Order Recieved',
-      templateId: process.env.SENDGRID_TEMPLATE_ID,
-      substitutions: {
+      to: {
+        email: process.env.API3_RECEIVER_EMAIL,
+      },
+      from: {
+        email: process.env.API3_SENDER_EMAIL!,
+      },
+      subject: 'Order recieved',
+      // templateId and dynamic data removed
+      text: JSON.stringify({
         contactOption,
         userName,
         order,
-      },
+        groupName,
+      }),
     });
 
     console.log('Email sent successfully');
