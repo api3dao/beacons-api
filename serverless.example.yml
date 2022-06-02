@@ -73,3 +73,19 @@ functions:
               - name: request.path.chainId
               - name: request.path.beaconId
               - name: request.path.transactionCount
+  validateAndSend:
+    handler: validate-and-send.validateAndSend
+    timeout: 10
+    memorySize: 128
+    events:
+      - httpApi:
+          path: /email
+          method: post
+    environment:
+      RECAPTCHA_SECRET_KEY: 
+      SENDGRID_API_KEY: 
+      API3_SENDER_EMAIL: 
+      API3_RECEIVER_EMAIL: 
+      SENDGRID_TEMPLATE_ID: 
+
+     
