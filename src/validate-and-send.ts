@@ -96,9 +96,7 @@ const sendEmail = async (form: ContactFormData) => {
       from: process.env.MAILTRAP_SENDER_EMAIL,
       to: process.env.MAILTRAP_RECEIVER_EMAIL,
       subject: 'Order Received',
-      text: JSON.stringify({
-        form,
-      }),
+      text: JSON.stringify(form),
     };
     await transporter.sendMail(message);
 
