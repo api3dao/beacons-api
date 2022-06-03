@@ -13,7 +13,6 @@ interface ContactFormData {
 }
 
 export const validateAndSend = async (event: ContactFormData) => {
-  console.log(event);
   const formData = event;
 
   if (!formData.token || !formData.contactOption || !formData.userName || !formData.order) {
