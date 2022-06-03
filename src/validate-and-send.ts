@@ -1,8 +1,10 @@
-import * as sgMail from '@sendgrid/mail';
+import nodemailer from 'nodemailer';
 import axios from 'axios';
-import { makeError } from './utils';
+import { getGlobalConfig, makeError } from './utils';
 
-interface Data {
+const config = getGlobalConfig();
+
+interface ContactFormData {
   contactOption: string;
   userName: string;
   token: string;
@@ -10,15 +12,17 @@ interface Data {
   groupName?: string;
 }
 
-export const validateAndSend = async (event: { body: Data }) => {
-  const { token, contactOption, userName, order, groupName } = event.body;
+export const validateAndSend = async (event: ContactFormData) => {
+  console.log(event);
+  const formData = event;
 
-  if (!token || !contactOption || !userName || !order) {
+  if (!formData.token || !formData.contactOption || !formData.userName || !formData.order) {
     return {
       statusCode: 400,
       body: JSON.stringify(
         {
-          message: makeError('invalid payload'),
+          message: makeError('Invalid payload'),
+          headers: config.headers,
         },
         null,
         2
@@ -26,25 +30,28 @@ export const validateAndSend = async (event: { body: Data }) => {
     };
   }
 
-  const success = await validateToken(token);
+  const success = await validateToken(formData.token);
+
   if (!success) {
     return {
       statusCode: 400,
       body: JSON.stringify(
         {
-          message: makeError('recaptcha validation failed'),
+          message: makeError('RECAPTCHA_SECRET_KEY validation failed'),
+          headers: config.headers,
         },
         null,
         2
       ),
     };
   }
-  await sendEmail(contactOption, userName, order, groupName);
+
+  await sendEmail(formData);
 };
 
 const validateToken = async (token: string) => {
   if (!process.env.RECAPTCHA_SECRET_KEY) {
-    console.error('No RECAPTCHA_SECRET_KEY found');
+    console.error('RECAPTCHA_SECRET_KEY not found');
     return;
   }
 
@@ -55,41 +62,49 @@ const validateToken = async (token: string) => {
 
     return response.data.success;
   } catch (error) {
-    console.error('something went wrong');
+    console.log('Something went wrong');
     return;
   }
 };
 
-const sendEmail = async (contactOption: string, userName: string, order: string, groupName?: string) => {
-  if (!process.env.SENDGRID_API_KEY) {
-    console.error('No SENDGRID_API_KEY ENV found.');
-    return;
-  }
-  sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-
-  // need to check all email env before sending email
+const sendEmail = async (form: ContactFormData) => {
+  const envValues = [
+    'MAILTRAP_HOST',
+    'MAILTRAP_PORT',
+    'MAILTRAP_USER',
+    'MAILTRAP_PASS',
+    'MAILTRAP_SENDER_EMAIL',
+    'MAILTRAP_RECEIVER_EMAIL',
+  ];
+  envValues.forEach((value) => {
+    if (!process.env[value]) {
+      throw new Error(`${value} is not set`);
+    }
+  });
 
   try {
-    await sgMail.send({
-      to: {
-        email: process.env.API3_RECEIVER_EMAIL,
+    const transporter = nodemailer.createTransport({
+      host: process.env.MAILTRAP_HOST,
+      port: Number(process.env.MAILTRAP_PORT),
+      auth: {
+        user: process.env.MAILTRAP_USER,
+        pass: process.env.MAILTRAP_PASS,
       },
-      from: {
-        email: process.env.API3_SENDER_EMAIL!,
-      },
-      subject: 'Order recieved',
-      // templateId and dynamic data removed
-      text: JSON.stringify({
-        contactOption,
-        userName,
-        order,
-        groupName,
-      }),
     });
+
+    // send mail with defined transport object
+    const message = {
+      from: process.env.MAILTRAP_SENDER_EMAIL,
+      to: process.env.MAILTRAP_RECEIVER_EMAIL,
+      subject: 'Order Received',
+      text: JSON.stringify({
+        form,
+      }),
+    };
+    await transporter.sendMail(message);
 
     console.log('Email sent successfully');
   } catch (error) {
-    console.error('sending email failed');
-    return;
+    console.log(error);
   }
 };

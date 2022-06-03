@@ -74,7 +74,7 @@ functions:
               - name: request.path.beaconId
               - name: request.path.transactionCount
   validateAndSend:
-    handler: validate-and-send.validateAndSend
+    handler: src/validate-and-send.validateAndSend
     timeout: 10
     memorySize: 128
     events:
@@ -82,10 +82,10 @@ functions:
           path: /email
           method: post
     environment:
-      RECAPTCHA_SECRET_KEY: 
-      SENDGRID_API_KEY: 
-      API3_SENDER_EMAIL: 
-      API3_RECEIVER_EMAIL: 
-      SENDGRID_TEMPLATE_ID: 
-
-     
+      RECAPTCHA_SECRET_KEY:
+      MAILTRAP_HOST:
+      MAILTRAP_PORT:
+      MAILTRAP_USER:
+      MAILTRAP_PASS:
+      MAILTRAP_SENDER_EMAIL:
+      MAILTRAP_RECEIVER_EMAIL:
