@@ -2,7 +2,6 @@ import { ethers } from 'ethers';
 import { go } from '@api3/airnode-utilities';
 import { DapiServer__factory } from '@api3/airnode-protocol-v1';
 import { APIGatewayProxyHandler } from 'aws-lambda';
-import { Log } from '@ethersproject/abstract-provider';
 import { z } from 'zod';
 import { contracts } from '@api3/operations/chain/deployments/references.json';
 import { getGlobalConfig, makeError } from './utils';
@@ -13,7 +12,12 @@ export const chainIdSchema = z.number();
 
 const config = getGlobalConfig();
 
-type ParsedLog = Log & { parsedLog: ethers.utils.LogDescription };
+type ParsedLog = {
+  parsedLog: ethers.utils.LogDescription;
+  blockNumber: number;
+  topics: Array<string>;
+  transactionHash: string;
+};
 type ParsedLogWithChainId = { events: ParsedLog[]; chainId: string };
 
 const transactions: Record<string, ParsedLog[]> = Object.fromEntries(
