@@ -57,7 +57,7 @@ export const chainValueDataPoint: APIGatewayProxyHandler = async (event): Promis
     ethers.utils.keccak256(ethers.utils.solidityPack(['address', 'bytes32'], [airnodeAddress, templateId]));
 
   const operation = async () =>
-    await (dapiName ? dapiServer.readDataFeedWithDapiName(dapiName!) : dapiServer.readDataFeedWithId(readDataFeedId));
+    await (dapiName ? dapiServer.readDataFeedWithDapiName(dapiName) : dapiServer.readDataFeedWithId(readDataFeedId));
   const [err, beaconResponse] = await go(operation, { timeoutMs: 5_000, retries: 2 });
 
   const e = err as Error;

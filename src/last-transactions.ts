@@ -10,6 +10,10 @@ export const evmBeaconIdSchema = z.string().regex(/^0x[a-fA-F0-9]{64}$/);
 export const evmAddressSchema = z.string().regex(/^0x[a-fA-F0-9]{40}$/);
 export const chainIdSchema = z.number();
 
+export const DEFAULT_TRANSACTION_COUNT = 5;
+export const DEFAULT_FROM_BLOCK_SIZE = 2000;
+export const MAX_TRANSACTIONS_FRESHNESS = 60_000;
+
 const config = getGlobalConfig();
 
 type ParsedLog = {
@@ -33,21 +37,24 @@ const transactionSortFunction = (a: ParsedLog, b: ParsedLog) => {
 
 export const refreshTransactions = async () => {
   const settledLogRetrieval = await Promise.allSettled(
-    Object.entries(contracts.DapiServer).map(async ([chainId, dapiServer]) => {
+    Object.entries(contracts.DapiServer).map(async ([chainId, dapiServerAddress]) => {
       const providerUrl = config.providers[chainId];
-      const provider = new ethers.providers.JsonRpcProvider(providerUrl, { name: chainId, chainId: parseInt(chainId) });
+      const provider = new ethers.providers.JsonRpcProvider(providerUrl, {
+        name: chainId,
+        chainId: parseInt(chainId, 10),
+      });
 
-      const txesPerChainId = transactions[chainId];
-      const subBlock = txesPerChainId && txesPerChainId.length > 0 ? txesPerChainId[0].blockNumber : undefined;
+      const txsPerChainId = transactions[chainId];
+      const fromBlock = txsPerChainId && txsPerChainId.length > 0 ? txsPerChainId[0].blockNumber : undefined;
 
       const [err, rawLogs] = await go(
         async () =>
           await provider.getLogs({
-            fromBlock: (subBlock ?? (await provider.getBlock('latest')).number - 2000) + 1,
+            fromBlock: (fromBlock ?? (await provider.getBlock('latest')).number - DEFAULT_FROM_BLOCK_SIZE) + 1,
             toBlock: 'latest',
-            address: dapiServer,
+            address: dapiServerAddress,
           }),
-        // Timeouts can be quite long for the initial query
+        // The initial query may take a long time to complete
         { timeoutMs: 15_000, retries: 2, retryDelayMs: 5_000 }
       );
 
@@ -57,8 +64,7 @@ export const refreshTransactions = async () => {
       }
 
       const voidSigner = new ethers.VoidSigner(ethers.constants.AddressZero);
-
-      const dapiServerInstance = DapiServer__factory.connect(dapiServer, voidSigner);
+      const dapiServerInstance = DapiServer__factory.connect(dapiServerAddress, voidSigner);
 
       const filteredParsedLogs = rawLogs
         .map((log) => ({ ...log, parsedLog: dapiServerInstance.interface.parseLog(log) }))
@@ -76,15 +82,14 @@ export const refreshTransactions = async () => {
     .filter((log) => log.status === 'fulfilled' && log.value)
     .map((log) => (log as PromiseFulfilledResult<any>).value! as ParsedLogWithChainId)
     .forEach((logWithChainId) => {
-      const sortedLogWithChainId = logWithChainId.events.sort(transactionSortFunction).map(
-        ({ blockNumber, parsedLog, topics, transactionHash }: ParsedLog) =>
-          ({
-            blockNumber,
-            parsedLog,
-            topics,
-            transactionHash,
-          } as ParsedLog)
-      );
+      const sortedLogWithChainId = logWithChainId.events
+        .sort(transactionSortFunction)
+        .map(({ blockNumber, parsedLog, topics, transactionHash }: ParsedLog) => ({
+          blockNumber,
+          parsedLog,
+          topics,
+          transactionHash,
+        }));
       transactions[logWithChainId.chainId.toString()].push(...sortedLogWithChainId);
 
       lastUpdate = Date.now();
@@ -93,12 +98,7 @@ export const refreshTransactions = async () => {
 
 export const lastTransactions: APIGatewayProxyHandler = async (event): Promise<any> => {
   try {
-    if (
-      !(
-        event.queryStringParameters?.beaconId &&
-        evmBeaconIdSchema.safeParse(event.queryStringParameters?.beaconId).success
-      )
-    ) {
+    if (!evmBeaconIdSchema.safeParse(event.queryStringParameters?.beaconId).success) {
       return {
         statusCode: 400,
         headers: config.headers,
@@ -106,7 +106,7 @@ export const lastTransactions: APIGatewayProxyHandler = async (event): Promise<a
       };
     }
 
-    if (!(event.queryStringParameters?.chainId && chainIdSchema.safeParse(event.queryStringParameters?.chainId))) {
+    if (!chainIdSchema.safeParse(event.queryStringParameters?.chainId)) {
       return {
         statusCode: 400,
         headers: config.headers,
@@ -122,13 +122,17 @@ export const lastTransactions: APIGatewayProxyHandler = async (event): Promise<a
     };
   }
 
-  const beaconId = event.queryStringParameters?.beaconId;
-  const chainId = event.queryStringParameters?.chainId;
+  // TODO: Replace with the values parsed from zod validation
+  const beaconId = event.queryStringParameters!.beaconId!;
+  const chainId = event.queryStringParameters!.chainId!;
 
-  const parsedTransactionCountLimit = parseInt(event.queryStringParameters?.transactionCountLimit ?? '5');
-  const transactionCountLimit = !isNaN(parsedTransactionCountLimit) ? parsedTransactionCountLimit : 5;
+  const eventTransactionCount = event.queryStringParameters?.transactionCountLimit;
+  const parsedTransactionCountLimit = eventTransactionCount ? parseInt(eventTransactionCount) : NaN;
+  const transactionCountLimit = !isNaN(parsedTransactionCountLimit)
+    ? parsedTransactionCountLimit
+    : DEFAULT_TRANSACTION_COUNT;
 
-  if (Date.now() - lastUpdate > 60_000) {
+  if (Date.now() - lastUpdate > MAX_TRANSACTIONS_FRESHNESS) {
     try {
       await refreshTransactions();
     } catch (e) {
@@ -141,8 +145,8 @@ export const lastTransactions: APIGatewayProxyHandler = async (event): Promise<a
     }
   }
 
-  const txesPerChainId = transactions[chainId];
-  const payload = txesPerChainId
+  const txsPerChainId = transactions[chainId];
+  const payload = txsPerChainId
     .filter((logEvent) => logEvent.parsedLog.args[0] === beaconId)
     .slice(0, transactionCountLimit);
 

@@ -23,14 +23,13 @@ Start by copying the example files and modifying them with real values:
 ```shell
 cp telemetryConfig.example.json telemetryConfig.json
 cp serverless.example.yml serverless.yml
-#<your favourite text editor>
 ```
 
 Test your potential deployment:
 
 ```shell
 rm -rf .build .serverless; # This removes build artifacts (paranoid)
-yarn sls invoke local --function <the name of the function youd like to test>
+yarn sls invoke local --function <the name of the function you'd like to test>
 ```
 
 If you're happy, authenticate with AWS and acquire credentials, as per the
