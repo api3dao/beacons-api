@@ -32,10 +32,10 @@
     date-fns "^2.16.1"
     ethers "^5.4.5"
 
-"@api3/operations@^latest":
-  version "0.0.1-08167ffd23a6b65b11c1a916e20d5dcf36d0fc0f-1"
-  resolved "https://registry.yarnpkg.com/@api3/operations/-/operations-0.0.1-08167ffd23a6b65b11c1a916e20d5dcf36d0fc0f-1.tgz#c99e312fba53d52efca4d26ad27dd46d3822abc9"
-  integrity sha512-DTrFhVrFLOe1pLUjBuOwK+RXwa5tkD6QktTtCNmixoLFKn56xXZQpt9C1b4DXyykWzqhgq5KxJ6V7pKivgivAQ==
+"@api3/operations@0.0.1-e5952f086d7593d8af5a1c0c678c5c0facb97b8b":
+  version "0.0.1-e5952f086d7593d8af5a1c0c678c5c0facb97b8b"
+  resolved "https://registry.yarnpkg.com/@api3/operations/-/operations-0.0.1-e5952f086d7593d8af5a1c0c678c5c0facb97b8b.tgz#793cb0f5481e4adc28cbb8fa0867d257adfe2750"
+  integrity sha512-46IjBp8VCTlVECFSSVXT30Iz734t8FZupYqDmV4JEQvOtIy9+JdT7uEek2nB5OrS98fbdPGnmaLEILF37Uzb7A==
 
 "@babel/code-frame@^7.0.0", "@babel/code-frame@^7.12.13", "@babel/code-frame@^7.16.7":
   version "7.16.7"
