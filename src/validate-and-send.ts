@@ -1,51 +1,142 @@
-import nodemailer from 'nodemailer';
 import axios from 'axios';
-import { getGlobalConfig, makeError } from './utils';
+import { APIGatewayProxyHandler } from 'aws-lambda';
+import { z } from 'zod';
+import { go } from '@api3/airnode-utilities';
+import { Client } from '@sendgrid/client';
+// There doesn't appear to be a way around require here
+import sgMail = require('@sendgrid/mail');
+import { getGlobalConfig } from './utils';
+
+sgMail.setClient(new Client());
 
 const config = getGlobalConfig();
 
-interface ContactFormData {
-  contactOption: string;
-  userName: string;
-  token: string;
-  order: string;
-  groupName?: string;
-}
+// The contact form POST payload schema
+// We don't want to constrain this schema too much as it may change.
+const contactFormDataSchema = z
+  .object({
+    contactOption: z.union([z.literal('telegram'), z.literal('discord'), z.literal('email')]),
+    userName: z.string(),
+    token: z.string(),
+    order: z.object({
+      chainId: z.string(),
+      items: z.any(), // TODO z.array(z.object({ beaconId: z.string(), coverage: z.string(), months: z.string(), fee: z.string() }))
+    }),
+    groupName: z.string().optional(),
+  })
+  .strict();
 
-export const validateAndSend = async (event: ContactFormData) => {
-  const formData = event;
+// Credentials for SendGrid
+const smtpSettingsSchema = z.object({
+  API3_RECEIVER_MAIL: z.string(),
+  API3_SENDER_MAIL: z.string(),
+  SENDGRID_API_KEY: z.string(),
+});
 
-  if (!formData.token || !formData.contactOption || !formData.userName || !formData.order) {
+/**
+ * Validates the ReCaptcha token in a POST payload body and if valid proceeds to send an email with the contact form
+ * data.
+ *
+ * @param event an AWS API Gateway Event
+ */
+export const validateAndSendEmail: APIGatewayProxyHandler = async (event): Promise<any> => {
+  if (!event.body) {
     return {
       statusCode: 400,
-      body: JSON.stringify(
-        {
-          message: makeError('Invalid payload'),
-          headers: config.headers,
-        },
-        null,
-        2
-      ),
+      headers: config.headers,
+      body: 'Invalid post body',
     };
   }
 
-  const success = await validateToken(formData.token);
-
-  if (!success) {
+  const parsedBody = JSON.parse(event.body);
+  const safeBody = contactFormDataSchema.safeParse(parsedBody);
+  if (!safeBody.success) {
     return {
       statusCode: 400,
-      body: JSON.stringify(
-        {
-          message: makeError('RECAPTCHA_SECRET_KEY validation failed'),
-          headers: config.headers,
-        },
-        null,
-        2
-      ),
+      headers: config.headers,
+      body: 'Invalid post body',
     };
   }
 
-  await sendEmail(formData);
+  const contactForm = safeBody.data;
+
+  const [err, isValidCaptcha] = await go(async () => await validateToken(contactForm.token), { timeoutMs: 5_000 });
+  if (err) {
+    const typedError = err as Error;
+    console.error(JSON.stringify(typedError, null, 2));
+
+    return {
+      statusCode: 500,
+      headers: config.headers,
+      body: 'An error occurred while validating the captcha',
+    };
+  }
+
+  if (!isValidCaptcha) {
+    return {
+      statusCode: 400,
+      headers: config.headers,
+      body: 'Invalid captcha',
+    };
+  }
+
+  const [errEmail] = await go(async () => await sendEmail(contactForm), { timeoutMs: 5_000 });
+
+  if (errEmail) {
+    const typedError = errEmail as Error;
+    console.error(JSON.stringify(typedError, null, 2));
+
+    return {
+      statusCode: 500,
+      headers: config.headers,
+      body: 'An error occurred while attempting to send the email',
+    };
+  }
+
+  return {
+    statusCode: 200,
+    headers: config.headers,
+    body: 'Captcha validated and email sent successfully',
+  };
+};
+
+/**
+ * Sends an email containing contact form data
+ *
+ * @param contactOption
+ * @param userName
+ * @param order
+ * @param groupName
+ */
+const sendEmail = async ({
+  contactOption,
+  userName,
+  order,
+  groupName,
+}: Omit<z.infer<typeof contactFormDataSchema>, 'token'>) => {
+  const smtpParsed = smtpSettingsSchema.safeParse(process.env);
+  if (!smtpParsed.success) {
+    console.error('Validation of ENVs for SMTP failed');
+    throw smtpParsed.error;
+  }
+
+  const { SENDGRID_API_KEY, API3_RECEIVER_MAIL, API3_SENDER_MAIL } = smtpParsed.data;
+
+  const cleanGroupName = groupName ? `Group Name: ${groupName}` : '';
+
+  sgMail.setApiKey(SENDGRID_API_KEY);
+  const msg = {
+    to: API3_RECEIVER_MAIL,
+    from: API3_SENDER_MAIL, // Use the email address or domain you verified above
+    subject: 'New order from API3 Explorer',
+    text: `Contact Option: ${contactOption}
+Username: ${userName}
+${cleanGroupName}
+Order: ${JSON.stringify(order, null, 2)}
+`,
+  };
+
+  return await sgMail.send(msg);
 };
 
 const validateToken = async (token: string) => {
@@ -61,47 +152,9 @@ const validateToken = async (token: string) => {
 
     return response.data.success;
   } catch (error) {
-    console.log('Something went wrong');
-    return;
-  }
-};
+    const typedError = error as Error;
+    console.error(JSON.stringify(typedError, null, 2));
 
-const sendEmail = async (form: ContactFormData) => {
-  const envValues = [
-    'MAILTRAP_HOST',
-    'MAILTRAP_PORT',
-    'MAILTRAP_USER',
-    'MAILTRAP_PASS',
-    'MAILTRAP_SENDER_EMAIL',
-    'MAILTRAP_RECEIVER_EMAIL',
-  ];
-  envValues.forEach((value) => {
-    if (!process.env[value]) {
-      throw new Error(`${value} is not set`);
-    }
-  });
-
-  try {
-    const transporter = nodemailer.createTransport({
-      host: process.env.MAILTRAP_HOST,
-      port: Number(process.env.MAILTRAP_PORT),
-      auth: {
-        user: process.env.MAILTRAP_USER,
-        pass: process.env.MAILTRAP_PASS,
-      },
-    });
-
-    // send mail with defined transport object
-    const message = {
-      from: process.env.MAILTRAP_SENDER_EMAIL,
-      to: process.env.MAILTRAP_RECEIVER_EMAIL,
-      subject: 'Order Received',
-      text: JSON.stringify(form),
-    };
-    await transporter.sendMail(message);
-
-    console.log('Email sent successfully');
-  } catch (error) {
-    console.log(error);
+    throw new Error('Error while attempting to validate ReCaptcha');
   }
 };

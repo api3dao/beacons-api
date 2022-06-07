@@ -73,19 +73,16 @@ functions:
               - name: request.path.chainId
               - name: request.path.beaconId
               - name: request.path.transactionCount
-  validateAndSend:
-    handler: src/validate-and-send.validateAndSend
-    timeout: 10
+
+  # This function often requires an associated CORS OPTIONS method enabled on the API gateway to satisfy Chrome pre-flight
+  # requests.
+  # More info available here: https://www.serverless.com/blog/cors-api-gateway-survival-guide/
+  validateAndSendEmail:
+    handler: src/validate-and-send.validateAndSendEmail
+    timeout: 20
     memorySize: 128
     events:
-      - httpApi:
-          path: /email
+      - http:
+          path: /contactus
           method: post
-    environment:
-      RECAPTCHA_SECRET_KEY:
-      MAILTRAP_HOST:
-      MAILTRAP_PORT:
-      MAILTRAP_USER:
-      MAILTRAP_PASS:
-      MAILTRAP_SENDER_EMAIL:
-      MAILTRAP_RECEIVER_EMAIL:
+          cors: true
