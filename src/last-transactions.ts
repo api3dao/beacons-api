@@ -53,6 +53,12 @@ export const refreshTransactions = async () => {
             fromBlock: (fromBlock ?? (await provider.getBlock('latest')).number - DEFAULT_FROM_BLOCK_SIZE) + 1,
             toBlock: 'latest',
             address: dapiServerAddress,
+            topics: [
+              [
+                ethers.utils.id('UpdatedBeaconWithSignedData(bytes32,int256,uint256)'),
+                ethers.utils.id('UpdatedBeaconWithPsp(bytes32,bytes32,int224,uint32)'),
+              ],
+            ],
           }),
         // The initial query may take a long time to complete
         { attemptTimeoutMs: 15_000, retries: 2, delay: { type: 'static', delayMs: 5_000 } }
@@ -66,13 +72,10 @@ export const refreshTransactions = async () => {
       const voidSigner = new ethers.VoidSigner(ethers.constants.AddressZero);
       const dapiServerInstance = DapiServer__factory.connect(dapiServerAddress, voidSigner);
 
-      const filteredParsedLogs = goRawLogs.data
-        .map((log) => ({ ...log, parsedLog: dapiServerInstance.interface.parseLog(log) }))
-        .filter(
-          (log) =>
-            log.parsedLog.eventFragment.name === 'UpdatedBeaconWithSignedData' ||
-            log.parsedLog.eventFragment.name === 'UpdatedBeaconWithPsp'
-        );
+      const filteredParsedLogs = goRawLogs.data.map((log) => ({
+        ...log,
+        parsedLog: dapiServerInstance.interface.parseLog(log),
+      }));
 
       return { events: filteredParsedLogs, chainId: chainId } as ParsedLogWithChainId;
     })
