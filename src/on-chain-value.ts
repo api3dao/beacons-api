@@ -8,8 +8,8 @@ import { getGlobalConfig, makeError } from './utils';
 const config = getGlobalConfig();
 
 export const chainValueDataPoint: APIGatewayProxyHandler = async (event): Promise<any> => {
-  const { chainId, dataFeedId, templateId, airnodeAddress, dapiName } = event.queryStringParameters!;
-  if (event.httpMethod !== 'GET' || !event.queryStringParameters || !chainId) {
+  const { chainId, dataFeedId, templateId, airnodeAddress, dapiName } = event.queryStringParameters ?? {};
+  if (!chainId) {
     return {
       statusCode: 500,
       headers: config.headers,
@@ -52,12 +52,17 @@ export const chainValueDataPoint: APIGatewayProxyHandler = async (event): Promis
 
   const dapiServer = DapiServer__factory.connect(dapiServerAddress, voidSigner);
 
-  const readDataFeedId =
-    dataFeedId ??
-    ethers.utils.keccak256(ethers.utils.solidityPack(['address', 'bytes32'], [airnodeAddress, templateId]));
+  const operation = async () => {
+    if (dapiName) {
+      const encodedDapiName = ethers.utils.formatBytes32String(dapiName);
+      return dapiServer.readDataFeedWithDapiName(encodedDapiName);
+    }
 
-  const operation = async () =>
-    await (dapiName ? dapiServer.readDataFeedWithDapiName(dapiName) : dapiServer.readDataFeedWithId(readDataFeedId));
+    const readDataFeedId =
+      dataFeedId ??
+      ethers.utils.keccak256(ethers.utils.solidityPack(['address', 'bytes32'], [airnodeAddress, templateId]));
+    return dapiServer.readDataFeedWithId(readDataFeedId);
+  };
   const goBeaconResponse = await go(operation, {
     attemptTimeoutMs: 5_000,
     retries: 2,
@@ -73,9 +78,14 @@ export const chainValueDataPoint: APIGatewayProxyHandler = async (event): Promis
     };
   }
 
+  const humanReadableResponse = {
+    value: goBeaconResponse.data.value.toString(),
+    timestamp: goBeaconResponse.data.timestamp.toString(),
+  };
+
   return {
     statusCode: 200,
     headers: config.headers,
-    body: JSON.stringify({ beaconResponse: goBeaconResponse.data }),
+    body: JSON.stringify({ beaconResponse: humanReadableResponse }),
   };
 };

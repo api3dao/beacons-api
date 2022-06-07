@@ -39,6 +39,11 @@ export const refreshTransactions = async () => {
   const settledLogRetrieval = await Promise.allSettled(
     Object.entries(contracts.DapiServer).map(async ([chainId, dapiServerAddress]) => {
       const providerUrl = config.providers[chainId];
+      if (!providerUrl) {
+        console.error(`No provider URL for chain ID "${chainId}"`);
+        return;
+      }
+
       const provider = new ethers.providers.JsonRpcProvider(providerUrl, {
         name: chainId,
         chainId: parseInt(chainId, 10),
@@ -83,7 +88,7 @@ export const refreshTransactions = async () => {
 
   settledLogRetrieval
     .filter((log) => log.status === 'fulfilled' && log.value)
-    .map((log) => (log as PromiseFulfilledResult<any>).value! as ParsedLogWithChainId)
+    .map((log) => (log as PromiseFulfilledResult<ParsedLogWithChainId>).value)
     .forEach((logWithChainId) => {
       const sortedLogWithChainId = logWithChainId.events
         .sort(transactionSortFunction)
@@ -138,8 +143,7 @@ export const lastTransactions: APIGatewayProxyHandler = async (event): Promise<a
     }
   }
 
-  const txsPerChainId = transactions[chainId];
-  const payload = txsPerChainId
+  const payload = transactions[chainId]
     .filter((logEvent) => logEvent.parsedLog.args[0] === beaconId)
     .slice(0, transactionCountLimit);
 

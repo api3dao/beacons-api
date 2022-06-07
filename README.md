@@ -28,8 +28,15 @@ cp serverless.example.yml serverless.yml
 Test your potential deployment:
 
 ```shell
-rm -rf .build .serverless; # This removes build artifacts (paranoid)
-yarn sls invoke local --function <the name of the function you'd like to test>
+rm -rf .build .serverless;
+yarn sls invoke local --function <function_name> --data <endpoint_data>
+```
+
+Examples:
+
+```shell
+rm -rf .build .serverless && yarn sls invoke local --function last_transactions --data '{ "queryStringParameters": {"beaconId":"0x5237b1d9dbbb7fcfabf646bcad0054abda328cee9d9d1fe2488cbed3a33cd47e", "chainId":80001}}'
+rm -rf .build .serverless && yarn sls invoke local --function chain_value_data_point --data '{ "queryStringParameters": {"dapiName":"AVAX/USD", "chainId":80001}}'
 ```
 
 If you're happy, authenticate with AWS and acquire credentials, as per the
