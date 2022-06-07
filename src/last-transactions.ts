@@ -1,5 +1,5 @@
 import { ethers } from 'ethers';
-import { go } from '@api3/airnode-utilities';
+import { go } from '@api3/promise-utils';
 import { DapiServer__factory } from '@api3/airnode-protocol-v1';
 import { APIGatewayProxyHandler } from 'aws-lambda';
 import { z } from 'zod';
@@ -47,7 +47,7 @@ export const refreshTransactions = async () => {
       const txsPerChainId = transactions[chainId];
       const fromBlock = txsPerChainId && txsPerChainId.length > 0 ? txsPerChainId[0].blockNumber : undefined;
 
-      const [err, rawLogs] = await go(
+      const goRawLogs = await go(
         async () =>
           await provider.getLogs({
             fromBlock: (fromBlock ?? (await provider.getBlock('latest')).number - DEFAULT_FROM_BLOCK_SIZE) + 1,
@@ -55,18 +55,18 @@ export const refreshTransactions = async () => {
             address: dapiServerAddress,
           }),
         // The initial query may take a long time to complete
-        { timeoutMs: 15_000, retries: 2, retryDelayMs: 5_000 }
+        { attemptTimeoutMs: 15_000, retries: 2, delay: { type: 'static', delayMs: 5_000 } }
       );
 
-      if (err || !rawLogs) {
-        console.error(err);
+      if (!goRawLogs.success) {
+        console.error(goRawLogs.error);
         return;
       }
 
       const voidSigner = new ethers.VoidSigner(ethers.constants.AddressZero);
       const dapiServerInstance = DapiServer__factory.connect(dapiServerAddress, voidSigner);
 
-      const filteredParsedLogs = rawLogs
+      const filteredParsedLogs = goRawLogs.data
         .map((log) => ({ ...log, parsedLog: dapiServerInstance.interface.parseLog(log) }))
         .filter(
           (log) =>
@@ -97,34 +97,24 @@ export const refreshTransactions = async () => {
 };
 
 export const lastTransactions: APIGatewayProxyHandler = async (event): Promise<any> => {
-  try {
-    if (!evmBeaconIdSchema.safeParse(event.queryStringParameters?.beaconId).success) {
-      return {
-        statusCode: 400,
-        headers: config.headers,
-        body: makeError('beaconId required - beaconId is either not present or invalid'),
-      };
-    }
-
-    if (!chainIdSchema.safeParse(event.queryStringParameters?.chainId)) {
-      return {
-        statusCode: 400,
-        headers: config.headers,
-        body: makeError('chainId required - chainId is either not present or invalid'),
-      };
-    }
-  } catch (e) {
-    console.trace(e);
+  const parsedBeaconId = evmBeaconIdSchema.safeParse(event.queryStringParameters?.beaconId);
+  if (!parsedBeaconId.success) {
     return {
-      statusCode: 500,
+      statusCode: 400,
       headers: config.headers,
-      body: makeError('An error occurred during parameter validation'),
+      body: makeError('beaconId required - beaconId is either not present or invalid'),
     };
   }
-
-  // TODO: Replace with the values parsed from zod validation
-  const beaconId = event.queryStringParameters!.beaconId!;
-  const chainId = event.queryStringParameters!.chainId!;
+  const parsedChainId = chainIdSchema.safeParse(event.queryStringParameters?.chainId);
+  if (!parsedChainId.success) {
+    return {
+      statusCode: 400,
+      headers: config.headers,
+      body: makeError('chainId required - chainId is either not present or invalid'),
+    };
+  }
+  const beaconId = parsedBeaconId.data;
+  const chainId = parsedChainId.data;
 
   const eventTransactionCount = event.queryStringParameters?.transactionCountLimit;
   const parsedTransactionCountLimit = eventTransactionCount ? parseInt(eventTransactionCount) : NaN;

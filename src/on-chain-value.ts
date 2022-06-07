@@ -1,7 +1,7 @@
 import { APIGatewayProxyHandler } from 'aws-lambda';
 import { DapiServer__factory } from '@api3/airnode-protocol-v1';
 import { ethers } from 'ethers';
-import { go } from '@api3/airnode-utilities';
+import { go } from '@api3/promise-utils';
 import { contracts } from '@api3/operations/chain/deployments/references.json';
 import { getGlobalConfig, makeError } from './utils';
 
@@ -58,17 +58,24 @@ export const chainValueDataPoint: APIGatewayProxyHandler = async (event): Promis
 
   const operation = async () =>
     await (dapiName ? dapiServer.readDataFeedWithDapiName(dapiName) : dapiServer.readDataFeedWithId(readDataFeedId));
-  const [err, beaconResponse] = await go(operation, { timeoutMs: 5_000, retries: 2 });
+  const goBeaconResponse = await go(operation, {
+    attemptTimeoutMs: 5_000,
+    retries: 2,
+    delay: { type: 'static', delayMs: 1_000 },
+  });
 
-  const e = err as Error;
-  if (err) {
-    console.error(err);
-    console.error(e.stack);
+  if (!goBeaconResponse.success) {
+    console.error(goBeaconResponse.error);
+    return {
+      statusCode: 500,
+      headers: config.headers,
+      body: JSON.stringify({ error: goBeaconResponse.error }),
+    };
   }
 
   return {
-    statusCode: err ? 500 : 200,
+    statusCode: 200,
     headers: config.headers,
-    body: JSON.stringify({ error: !!err, beaconResponse }),
+    body: JSON.stringify({ beaconResponse: goBeaconResponse.data }),
   };
 };

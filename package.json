@@ -48,8 +48,8 @@
   },
   "dependencies": {
     "@api3/airnode-protocol-v1": "^0.3.0",
-    "@api3/airnode-utilities": "^0.5.2",
     "@api3/operations": "0.0.1-e5952f086d7593d8af5a1c0c678c5c0facb97b8b",
+    "@api3/promise-utils": "^0.3.0",
     "ethers": "^5.6.4",
     "source-map-support": "^0.5.21",
     "zod": "^3.16.0"

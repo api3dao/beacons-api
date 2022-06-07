@@ -23,19 +23,15 @@
   resolved "https://registry.yarnpkg.com/@api3/airnode-protocol-v1/-/airnode-protocol-v1-0.3.0.tgz#87976057bc625d174f16efad8139d85185b23cca"
   integrity sha512-2GRK6wSsQuDbf34emOVOryo/l1+4iSsf+cuNzcRALl33KR5i3wk8mQ5IlCVsMGHHAvg4s5CFGz4y7azf693tbQ==
 
-"@api3/airnode-utilities@^0.5.2":
-  version "0.5.2"
-  resolved "https://registry.yarnpkg.com/@api3/airnode-utilities/-/airnode-utilities-0.5.2.tgz#8457b380d6b482e35548192cc5f8448254ff343d"
-  integrity sha512-ggak5o9u7hsHbi1gMTHpK/Q3Wih9Eop526eySuxSYSHZuwnKlJNm4STYmzlYDMZN78zTFW7F1RbjQ0lBlkaEvw==
-  dependencies:
-    "@lifeomic/attempt" "^3.0.0"
-    date-fns "^2.16.1"
-    ethers "^5.4.5"
-
 "@api3/operations@0.0.1-e5952f086d7593d8af5a1c0c678c5c0facb97b8b":
   version "0.0.1-e5952f086d7593d8af5a1c0c678c5c0facb97b8b"
   resolved "https://registry.yarnpkg.com/@api3/operations/-/operations-0.0.1-e5952f086d7593d8af5a1c0c678c5c0facb97b8b.tgz#793cb0f5481e4adc28cbb8fa0867d257adfe2750"
   integrity sha512-46IjBp8VCTlVECFSSVXT30Iz734t8FZupYqDmV4JEQvOtIy9+JdT7uEek2nB5OrS98fbdPGnmaLEILF37Uzb7A==
+
+"@api3/promise-utils@^0.3.0":
+  version "0.3.0"
+  resolved "https://registry.yarnpkg.com/@api3/promise-utils/-/promise-utils-0.3.0.tgz#e7ebf92bfd8c1d39983321fc5445070c51fce176"
+  integrity sha512-fH3CzEcsCQjoX6BZ5M+3yRIXZ2zz4/nFdzKUB4wvn3KjvvzvroHFZrzhbKa4mB9E4AS0xnou1AXhlrnN5Fcy+A==
 
 "@babel/code-frame@^7.0.0", "@babel/code-frame@^7.12.13", "@babel/code-frame@^7.16.7":
   version "7.16.7"
@@ -932,11 +928,6 @@
   version "1.1.1"
   resolved "https://registry.yarnpkg.com/@kwsites/promise-deferred/-/promise-deferred-1.1.1.tgz#8ace5259254426ccef57f3175bc64ed7095ed919"
   integrity sha512-GaHYm+c0O9MjZRu0ongGBRbinu8gVAMd2UZjji6jVmqKtZluZnptXGWhz1E8j8D2HJ3f/yMxKAUC0b+57wncIw==
-
-"@lifeomic/attempt@^3.0.0":
-  version "3.0.3"
-  resolved "https://registry.yarnpkg.com/@lifeomic/attempt/-/attempt-3.0.3.tgz#e742a5b85eb673e2f1746b0f39cb932cbc6145bb"
-  integrity sha512-GlM2AbzrErd/TmLL3E8hAHmb5Q7VhDJp35vIbyPVA5Rz55LZuRr8pwL3qrwwkVNo05gMX1J44gURKb4MHQZo7w==
 
 "@nodelib/fs.scandir@2.1.5":
   version "2.1.5"
@@ -2202,11 +2193,6 @@ data-urls@^2.0.0:
     whatwg-mimetype "^2.3.0"
     whatwg-url "^8.0.0"
 
-date-fns@^2.16.1:
-  version "2.28.0"
-  resolved "https://registry.yarnpkg.com/date-fns/-/date-fns-2.28.0.tgz#9570d656f5fc13143e50c975a3b6bbeb46cd08b2"
-  integrity sha512-8d35hViGYx/QH0icHYCeLmsLmMUheMmTyV9Fcm6gvNwdw31yXXH+O85sOBJ+OLnLQMKZowvpKb6FgMIQjcpvQw==
-
 dayjs@^1.11.2:
   version "1.11.2"
   resolved "https://registry.yarnpkg.com/dayjs/-/dayjs-1.11.2.tgz#fa0f5223ef0d6724b3d8327134890cfe3d72fbe5"
@@ -2774,7 +2760,7 @@ esutils@^2.0.2:
   resolved "https://registry.yarnpkg.com/esutils/-/esutils-2.0.3.tgz#74d2eb4de0b8da1293711910d50775b9b710ef64"
   integrity sha512-kVscqXk4OCp68SZ0dkgEKVi6/8ij300KBWTJq32P/dYeWTSwK41WyTxalN1eRmA5Z9UU/LX9D7FWSmV9SAYx6g==
 
-ethers@^5.4.5, ethers@^5.6.4:
+ethers@^5.6.4:
   version "5.6.8"
   resolved "https://registry.yarnpkg.com/ethers/-/ethers-5.6.8.tgz#d36b816b4896341a80a8bbd2a44e8cb6e9b98dd4"
   integrity sha512-YxIGaltAOdvBFPZwIkyHnXbW40f1r8mHUgapW6dxkO+6t7H6wY8POUn0Kbxrd/N7I4hHxyi7YCddMAH/wmho2w==
