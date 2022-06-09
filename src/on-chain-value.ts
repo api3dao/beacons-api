@@ -71,4 +71,30 @@ export const chainValueDataPoint: APIGatewayProxyHandler = async (event): Promis
     headers: config.headers,
     body: JSON.stringify({ error: !!err, beaconResponse }),
   };
+  
+  // TODO: replace operation with the following logic
+  //
+  // const db = await initDb();
+  // if(db === undefined) {
+  //   return {
+  //     statusCode: 500,
+  //     headers: config.headers,
+  //     body: makeError("An error occurred while trying to initialize the database"),
+  //   };
+  // }
+
+  // const operation = async () => db.query("SELECT 1");
+  // const [err, beaconResponse] = await go(operation, { timeoutMs: 5_000, retries: 2 });
+
+  // const e = err as Error;
+  // if (err) {
+  //   console.error(err);
+  //   console.error(e.stack);
+  // }
+
+  // return {
+  //   statusCode: err ? 500 : 200,
+  //   headers: config.headers,
+  //   body: JSON.stringify({ error: !!err, beaconResponse }),
+  // };
 };
