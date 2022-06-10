@@ -40,7 +40,7 @@ const smtpSettingsSchema = z.object({
  *
  * @param event an AWS API Gateway Event
  */
-export const validateAndSendEmail: APIGatewayProxyHandler = async (event): Promise<any> => {
+export const validateAndSendEmail: APIGatewayProxyHandler = async (event) => {
   if (!event.body) {
     return {
       statusCode: 400,
@@ -61,7 +61,7 @@ export const validateAndSendEmail: APIGatewayProxyHandler = async (event): Promi
 
   const contactForm = safeBody.data;
 
-  const [err, isValidCaptcha] = await go(async () => await validateToken(contactForm.token), { timeoutMs: 5_000 });
+  const [err, isValidCaptcha] = await go(() => validateToken(contactForm.token), { timeoutMs: 5_000 });
   if (err) {
     const typedError = err as Error;
     console.error(JSON.stringify(typedError, null, 2));
