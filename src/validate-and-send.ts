@@ -60,7 +60,7 @@ export const validateAndSendEmail: APIGatewayProxyHandler = async (event) => {
 
   const contactForm = safeBody.data;
 
-  const [err, isValidCaptcha] = await go(async () => await validateToken(contactForm.token), { timeoutMs: 5_000 });
+  const [err, isValidCaptcha] = await go(() => validateToken(contactForm.token), { timeoutMs: 5_000 });
   if (err) {
     const typedError = err as Error;
     console.error(JSON.stringify(typedError, null, 2));
