@@ -20,6 +20,7 @@ const contactFormDataSchema = z
     token: z.string(),
     order: z.object({
       chainId: z.string(),
+      chainName: z.string().optional(),
       items: z.any(), // TODO z.array(z.object({ beaconId: z.string(), coverage: z.string(), months: z.string(), fee: z.string() }))
     }),
     groupName: z.string().optional(),
