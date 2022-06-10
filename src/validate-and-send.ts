@@ -39,7 +39,7 @@ const smtpSettingsSchema = z.object({
  *
  * @param event an AWS API Gateway Event
  */
-export const validateAndSendEmail: APIGatewayProxyHandler = async (event): Promise<any> => {
+export const validateAndSendEmail: APIGatewayProxyHandler = async (event) => {
   if (!event.body) {
     return {
       statusCode: 400,
