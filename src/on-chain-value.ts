@@ -30,28 +30,42 @@ export const chainValueDataPoint: APIGatewayProxyHandler = async (event): Promis
     return {
       statusCode: 500,
       headers: config.headers,
-      body: makeError("An error occurred while trying to initialize the database"),
+      body: makeError("An error has occurred while trying to initialize the database"),
     };
   }
 
   const operation = async () => db.query(`
-    SELECT event_data -> 'parsedLog' -> 'args' ->> 1 as data
-    FROM dapi_events 
-    WHERE 
-    chain = ${chainId} AND
-    event_data->'parsedLog'->'args'->>0 = '${dataFeedId}' 
-    ORDER by block DESC 
-    LIMIT 1;`
+      SELECT event_data -> 'parsedLog' -> 'args' ->> 1 as data
+      FROM dapi_events 
+      WHERE 
+      chain = $1 AND
+      event_data->'parsedLog'->'args'->>0 = $2
+      ORDER by block DESC 
+      LIMIT 1;
+    `, [chainId, dataFeedId]
   );
 
   const [err, queryResult] = await go(operation, { timeoutMs: 5_000, retries: 2 });
   const e = err as Error;
-  if (err) {
+  if (err || queryResult === undefined) {
     console.error(err);
     console.error(e.stack);
+    return {
+      statusCode: 500,
+      headers: config.headers,
+      body: makeError("An error has occurred while running the query"),
+    };
   }
 
-  const beaconResponse = JSON.parse(queryResult?.rows[0]?.data);
+  if(queryResult.rows.length === 0) {
+    return {
+      statusCode: 500,
+      headers: config.headers,
+      body: makeError("Value not found"),
+    };
+  }
+
+  const beaconResponse = JSON.parse(queryResult.rows[0].data);
 
   return {
     statusCode: err ? 500 : 200,
