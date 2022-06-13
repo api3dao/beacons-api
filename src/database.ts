@@ -1,7 +1,7 @@
 import tls from 'tls';
 import { go } from '@api3/airnode-utilities';
-import { OverrideDatabaseOptions } from './types';
 import { Client } from 'pg';
+import { OverrideDatabaseOptions } from './types';
 import { sendToOpsGenieLowLevel } from './opsgenie-utils';
 
 export const initDb = async (optionalOverrides?: OverrideDatabaseOptions) => {
