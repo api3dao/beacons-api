@@ -3,7 +3,9 @@ import { APIGatewayProxyHandler } from 'aws-lambda';
 import { z } from 'zod';
 import { getGlobalConfig, makeError } from './utils';
 import { initDb } from './database';
+import { getDataFeedIdFromDapiName } from './on-chain-value';
 
+export const dapiNameSchema = z.string();
 export const evmBeaconIdSchema = z.string().regex(/^0x[a-fA-F0-9]{64}$/);
 export const evmAddressSchema = z.string().regex(/^0x[a-fA-F0-9]{40}$/);
 export const chainIdSchema = z.string().regex(/^\d+$/);
@@ -15,30 +17,40 @@ export const MAX_TRANSACTIONS_FRESHNESS = 60_000;
 const config = getGlobalConfig();
 
 export const lastTransactions: APIGatewayProxyHandler = async (event): Promise<any> => {
-  const parsedBeaconId = evmBeaconIdSchema.safeParse(event.queryStringParameters?.beaconId);
-  if (!parsedBeaconId.success) {
+  const { chainId, beaconId, dapiName, transactionCountLimit } = event.queryStringParameters ?? {};
+
+  if (!(dapiName || beaconId)) {
     return {
       statusCode: 400,
       headers: config.headers,
-      body: makeError('beaconId required - beaconId is either not present or invalid'),
+      body: makeError('Beaconid or dapiName required - at least one of these values must be present'),
     };
   }
-  const parsedChainId = chainIdSchema.safeParse(event.queryStringParameters?.chainId);
+
+  const parsedBeaconId = evmBeaconIdSchema.safeParse(beaconId);
+  if (beaconId && !parsedBeaconId.success) {
+    return {
+      statusCode: 400,
+      headers: config.headers,
+      body: makeError('Invalid beaconId'),
+    };
+  }
+  const parsedChainId = chainIdSchema.safeParse(chainId);
   if (!parsedChainId.success) {
     return {
       statusCode: 400,
       headers: config.headers,
-      body: makeError('chainId required - chainId is either not present or invalid'),
+      body: makeError('ChainId required - ChainId is either not present or invalid'),
     };
   }
-  const beaconId = parsedBeaconId.data;
-  const chainId = parsedChainId.data;
-
-  const eventTransactionCount = event.queryStringParameters?.transactionCountLimit;
-  const parsedTransactionCountLimit = eventTransactionCount ? parseInt(eventTransactionCount) : NaN;
-  const transactionCountLimit = !isNaN(parsedTransactionCountLimit)
-    ? parsedTransactionCountLimit
-    : DEFAULT_TRANSACTION_COUNT;
+  const parsedDapiName = dapiNameSchema.safeParse(dapiName);
+  if (dapiName && !parsedDapiName.success) {
+    return {
+      statusCode: 400,
+      headers: config.headers,
+      body: makeError('Invalid dapiName'),
+    };
+  }
 
   const db = await initDb();
   if (db === undefined) {
@@ -48,6 +60,24 @@ export const lastTransactions: APIGatewayProxyHandler = async (event): Promise<a
       body: makeError('An error has occurred while trying to initialize the database'),
     };
   }
+
+  const queryChainId = parsedChainId.data;
+  const queryBeaconId = parsedDapiName.success
+    ? await getDataFeedIdFromDapiName(parsedDapiName.data, db)
+    : parsedBeaconId.success && parsedBeaconId.data;
+
+  if (!queryBeaconId) {
+    return {
+      statusCode: 400,
+      headers: config.headers,
+      body: makeError('Could not find the chainId from the provided dapiName'),
+    };
+  }
+
+  const parsedTransactionCountLimit = transactionCountLimit ? parseInt(transactionCountLimit) : NaN;
+  const queryTransactionCountLimit = !isNaN(parsedTransactionCountLimit)
+    ? parsedTransactionCountLimit
+    : DEFAULT_TRANSACTION_COUNT;
 
   const operation = async () =>
     db.query(
@@ -62,7 +92,7 @@ export const lastTransactions: APIGatewayProxyHandler = async (event): Promise<a
     event_data->'parsedLog'->'args'->> 0 = $2
     ORDER by block DESC LIMIT $3;
   `,
-      [chainId, beaconId, transactionCountLimit]
+      [queryChainId, queryBeaconId, queryTransactionCountLimit]
     );
 
   const [err, queryResult] = await go(operation, { timeoutMs: 5_000, retries: 2 });
