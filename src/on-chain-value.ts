@@ -41,8 +41,8 @@ const getDataFeedIdFromDapiName = async (dapiName: string, db: Client) => {
 };
 
 export const chainValueDataPoint: APIGatewayProxyHandler = async (event): Promise<any> => {
-  const { chainId, dataFeedId, templateId, airnodeAddress, dapiName } = event.queryStringParameters!;
-  if (event.httpMethod !== 'GET' || !event.queryStringParameters || !chainId) {
+  const { chainId, dataFeedId, templateId, airnodeAddress, dapiName } = event.queryStringParameters ?? {};
+  if (!chainId) {
     return {
       statusCode: 500,
       headers: config.headers,
@@ -128,8 +128,8 @@ export const chainValueDataPoint: APIGatewayProxyHandler = async (event): Promis
   const beaconResponse = [result[0], parseInt(result[1].hex)];
 
   return {
-    statusCode: err ? 500 : 200,
+    statusCode: 200,
     headers: config.headers,
-    body: JSON.stringify({ error: !!err, beaconResponse }),
+    body: JSON.stringify({ beaconResponse }),
   };
 };
