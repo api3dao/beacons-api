@@ -1,15 +1,15 @@
 import { APIGatewayProxyHandler } from 'aws-lambda';
 import { DapiServer__factory } from '@api3/airnode-protocol-v1';
 import { ethers } from 'ethers';
-import { go } from '@api3/airnode-utilities';
+import { go } from '@api3/promise-utils';
 import { contracts } from '@api3/operations/chain/deployments/references.json';
 import { getGlobalConfig, makeError } from './utils';
 
 const config = getGlobalConfig();
 
 export const chainValueDataPoint: APIGatewayProxyHandler = async (event): Promise<any> => {
-  const { chainId, dataFeedId, templateId, airnodeAddress, dapiName } = event.queryStringParameters!;
-  if (event.httpMethod !== 'GET' || !event.queryStringParameters || !chainId) {
+  const { chainId, dataFeedId, templateId, airnodeAddress, dapiName } = event.queryStringParameters ?? {};
+  if (!chainId) {
     return {
       statusCode: 500,
       headers: config.headers,
@@ -52,23 +52,40 @@ export const chainValueDataPoint: APIGatewayProxyHandler = async (event): Promis
 
   const dapiServer = DapiServer__factory.connect(dapiServerAddress, voidSigner);
 
-  const readDataFeedId =
-    dataFeedId ??
-    ethers.utils.keccak256(ethers.utils.solidityPack(['address', 'bytes32'], [airnodeAddress, templateId]));
+  const operation = async () => {
+    if (dapiName) {
+      const encodedDapiName = ethers.utils.formatBytes32String(dapiName);
+      return dapiServer.readDataFeedWithDapiName(encodedDapiName);
+    }
 
-  const operation = async () =>
-    await (dapiName ? dapiServer.readDataFeedWithDapiName(dapiName!) : dapiServer.readDataFeedWithId(readDataFeedId));
-  const [err, beaconResponse] = await go(operation, { timeoutMs: 5_000, retries: 2 });
+    const readDataFeedId =
+      dataFeedId ??
+      ethers.utils.keccak256(ethers.utils.solidityPack(['address', 'bytes32'], [airnodeAddress, templateId]));
+    return dapiServer.readDataFeedWithId(readDataFeedId);
+  };
+  const goBeaconResponse = await go(operation, {
+    attemptTimeoutMs: 5_000,
+    retries: 2,
+    delay: { type: 'static', delayMs: 1_000 },
+  });
 
-  const e = err as Error;
-  if (err) {
-    console.error(err);
-    console.error(e.stack);
+  if (!goBeaconResponse.success) {
+    console.error(goBeaconResponse.error);
+    return {
+      statusCode: 500,
+      headers: config.headers,
+      body: JSON.stringify({ error: goBeaconResponse.error }),
+    };
   }
 
+  const humanReadableResponse = {
+    value: goBeaconResponse.data.value.toString(),
+    timestamp: goBeaconResponse.data.timestamp.toString(),
+  };
+
   return {
-    statusCode: err ? 500 : 200,
+    statusCode: 200,
     headers: config.headers,
-    body: JSON.stringify({ error: !!err, beaconResponse }),
+    body: JSON.stringify({ beaconResponse: humanReadableResponse }),
   };
 };

@@ -11,7 +11,7 @@ export const sendToOpsGenieLowLevel = async (message: OpsGenieMessage, globalCon
       return;
     }
     const url = 'https://api.opsgenie.com/v2/alerts';
-    const apiKey = process.env.OPSGENIE_API_KEY ?? globalConfig.opsGenieConfig.apiKey;
+    const apiKey = process.env.OPSGENIE_API_KEY!;
 
     const payload = JSON.stringify({
       ...message,
