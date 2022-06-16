@@ -26,4 +26,12 @@ export interface OpsGenieConfig {
   readonly responders: OpsGenieResponder[];
 }
 
+export interface OverrideDatabaseOptions {
+  readonly hostname?: string;
+  readonly port?: string;
+  readonly username?: string;
+  readonly password?: string;
+  readonly database?: string;
+}
+
 export type APIGatewayProxyHandler = Handler<APIGatewayProxyEvent, APIGatewayProxyResult>;

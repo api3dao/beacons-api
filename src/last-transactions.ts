@@ -1,146 +1,113 @@
-import { ethers } from 'ethers';
 import { go } from '@api3/airnode-utilities';
-import { DapiServer__factory } from '@api3/airnode-protocol-v1';
 import { APIGatewayProxyHandler } from 'aws-lambda';
-import { Log } from '@ethersproject/abstract-provider';
 import { z } from 'zod';
-import { contracts } from '@api3/operations/chain/deployments/references.json';
 import { getGlobalConfig, makeError } from './utils';
+import { initDb } from './database';
+import { getDataFeedIdFromDapiName } from './on-chain-value';
 
+export const dapiNameSchema = z.string();
 export const evmBeaconIdSchema = z.string().regex(/^0x[a-fA-F0-9]{64}$/);
 export const evmAddressSchema = z.string().regex(/^0x[a-fA-F0-9]{40}$/);
-export const chainIdSchema = z.number();
+export const chainIdSchema = z.string().regex(/^\d+$/);
+
+export const DEFAULT_TRANSACTION_COUNT = 5;
+export const DEFAULT_FROM_BLOCK_SIZE = 2000;
+export const MAX_TRANSACTIONS_FRESHNESS = 60_000;
 
 const config = getGlobalConfig();
 
-type ParsedLog = Log & { parsedLog: ethers.utils.LogDescription };
-type ParsedLogWithChainId = { events: ParsedLog[]; chainId: string };
-
-const transactions: Record<string, ParsedLog[]> = Object.fromEntries(
-  Object.keys(contracts.DapiServer).map((chainId) => [chainId, []])
-);
-let lastUpdate = 0;
-
-const transactionSortFunction = (a: ParsedLog, b: ParsedLog) => {
-  if (a.blockNumber > b.blockNumber) return -1;
-  if (a.blockNumber > b.blockNumber) return 1;
-  return 0;
-};
-
-export const refreshTransactions = async () => {
-  const settledLogRetrieval = await Promise.allSettled(
-    Object.entries(contracts.DapiServer).map(async ([chainId, dapiServer]) => {
-      const providerUrl = config.providers[chainId];
-      const provider = new ethers.providers.JsonRpcProvider(providerUrl, { name: chainId, chainId: parseInt(chainId) });
-
-      const txesPerChainId = transactions[chainId];
-      const subBlock = txesPerChainId && txesPerChainId.length > 0 ? txesPerChainId[0].blockNumber : undefined;
-
-      const [err, rawLogs] = await go(
-        async () =>
-          await provider.getLogs({
-            fromBlock: (subBlock ?? (await provider.getBlock('latest')).number - 2000) + 1,
-            toBlock: 'latest',
-            address: dapiServer,
-          }),
-        // Timeouts can be quite long for the initial query
-        { timeoutMs: 15_000, retries: 2, retryDelayMs: 5_000 }
-      );
-
-      if (err || !rawLogs) {
-        console.error(err);
-        return;
-      }
-
-      const voidSigner = new ethers.VoidSigner(ethers.constants.AddressZero);
-
-      const dapiServerInstance = DapiServer__factory.connect(dapiServer, voidSigner);
-
-      const filteredParsedLogs = rawLogs
-        .map((log) => ({ ...log, parsedLog: dapiServerInstance.interface.parseLog(log) }))
-        .filter(
-          (log) =>
-            log.parsedLog.eventFragment.name === 'UpdatedBeaconWithSignedData' ||
-            log.parsedLog.eventFragment.name === 'UpdatedBeaconWithPsp'
-        );
-
-      return { events: filteredParsedLogs, chainId: chainId } as ParsedLogWithChainId;
-    })
-  );
-
-  settledLogRetrieval
-    .filter((log) => log.status === 'fulfilled' && log.value)
-    .map((log) => (log as PromiseFulfilledResult<any>).value! as ParsedLogWithChainId)
-    .forEach((logWithChainId) => {
-      const sortedLogWithChainId = logWithChainId.events.sort(transactionSortFunction).map(
-        ({ blockNumber, parsedLog, topics, transactionHash }: ParsedLog) =>
-          ({
-            blockNumber,
-            parsedLog,
-            topics,
-            transactionHash,
-          } as ParsedLog)
-      );
-      transactions[logWithChainId.chainId.toString()].push(...sortedLogWithChainId);
-
-      lastUpdate = Date.now();
-    });
-};
-
 export const lastTransactions: APIGatewayProxyHandler = async (event): Promise<any> => {
-  try {
-    if (
-      !(
-        event.queryStringParameters?.beaconId &&
-        evmBeaconIdSchema.safeParse(event.queryStringParameters?.beaconId).success
-      )
-    ) {
-      return {
-        statusCode: 400,
-        headers: config.headers,
-        body: makeError('beaconId required - beaconId is either not present or invalid'),
-      };
-    }
+  const { chainId, beaconId, dapiName, transactionCountLimit } = event.queryStringParameters ?? {};
 
-    if (!(event.queryStringParameters?.chainId && chainIdSchema.safeParse(event.queryStringParameters?.chainId))) {
-      return {
-        statusCode: 400,
-        headers: config.headers,
-        body: makeError('chainId required - chainId is either not present or invalid'),
-      };
-    }
-  } catch (e) {
-    console.trace(e);
+  if (!(dapiName || beaconId)) {
     return {
-      statusCode: 500,
+      statusCode: 400,
       headers: config.headers,
-      body: makeError('An error occurred during parameter validation'),
+      body: makeError('Beaconid or dapiName required - at least one of these values must be present'),
     };
   }
 
-  const beaconId = event.queryStringParameters?.beaconId;
-  const chainId = event.queryStringParameters?.chainId;
-
-  const parsedTransactionCountLimit = parseInt(event.queryStringParameters?.transactionCountLimit ?? '5');
-  const transactionCountLimit = !isNaN(parsedTransactionCountLimit) ? parsedTransactionCountLimit : 5;
-
-  if (Date.now() - lastUpdate > 60_000) {
-    try {
-      await refreshTransactions();
-    } catch (e) {
-      console.error(e);
-      return {
-        statusCode: 500,
-        headers: config.headers,
-        body: makeError('Something went wrong while retrieving transaction logs'),
-      };
-    }
+  const parsedBeaconId = evmBeaconIdSchema.safeParse(beaconId);
+  if (beaconId && !parsedBeaconId.success) {
+    return {
+      statusCode: 400,
+      headers: config.headers,
+      body: makeError('Invalid beaconId'),
+    };
+  }
+  const parsedChainId = chainIdSchema.safeParse(chainId);
+  if (!parsedChainId.success) {
+    return {
+      statusCode: 400,
+      headers: config.headers,
+      body: makeError('ChainId required - ChainId is either not present or invalid'),
+    };
+  }
+  const parsedDapiName = dapiNameSchema.safeParse(dapiName);
+  if (dapiName && !parsedDapiName.success) {
+    return {
+      statusCode: 400,
+      headers: config.headers,
+      body: makeError('Invalid dapiName'),
+    };
   }
 
-  const txesPerChainId = transactions[chainId];
-  const payload = txesPerChainId
-    .filter((logEvent) => logEvent.parsedLog.args[0] === beaconId)
-    .slice(0, transactionCountLimit);
+  const db = await initDb();
+  if (db === undefined) {
+    return {
+      statusCode: 500,
+      headers: config.headers,
+      body: makeError('An error has occurred while trying to initialize the database'),
+    };
+  }
+
+  const queryChainId = parsedChainId.data;
+  const queryBeaconId = parsedDapiName.success
+    ? await getDataFeedIdFromDapiName(parsedDapiName.data, db)
+    : parsedBeaconId.success && parsedBeaconId.data;
+
+  if (!queryBeaconId) {
+    return {
+      statusCode: 400,
+      headers: config.headers,
+      body: makeError('Could not find the chainId from the provided dapiName'),
+    };
+  }
+
+  const parsedTransactionCountLimit = transactionCountLimit ? parseInt(transactionCountLimit) : NaN;
+  const queryTransactionCountLimit = !isNaN(parsedTransactionCountLimit)
+    ? parsedTransactionCountLimit
+    : DEFAULT_TRANSACTION_COUNT;
+
+  const operation = async () =>
+    db.query(
+      `
+    SELECT 
+    event_data -> 'blockNumber' as "blockNumber", 
+    event_data -> 'parsedLog' as "parsedLog",
+    event_data -> 'topics' as "topics",
+    event_data -> 'transactionHash' as "transactionHash"
+    FROM dapi_events 
+    WHERE chain = $1 AND 
+    event_data->'parsedLog'->'args'->> 0 = $2
+    ORDER by block DESC LIMIT $3;
+  `,
+      [queryChainId, queryBeaconId, queryTransactionCountLimit]
+    );
+
+  const [err, queryResult] = await go(operation, { timeoutMs: 5_000, retries: 2 });
+  if (err) {
+    const e = err as Error;
+    console.error(err);
+    console.error(e.stack);
+    return {
+      statusCode: 500,
+      headers: config.headers,
+      body: makeError('An error has occurred while querying last transactions'),
+    };
+  }
+
+  const payload = queryResult.rows;
 
   return {
     statusCode: 200,

@@ -72,6 +72,7 @@ functions:
             cacheKeyParameters:
               - name: request.path.chainId
               - name: request.path.beaconId
+              - name: request.path.dapiName
               - name: request.path.transactionCount
 
   # This function often requires an associated CORS OPTIONS method enabled on the API gateway to satisfy Chrome pre-flight
