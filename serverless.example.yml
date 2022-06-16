@@ -74,3 +74,16 @@ functions:
               - name: request.path.beaconId
               - name: request.path.dapiName
               - name: request.path.transactionCount
+  coin_value:
+    handler: src/coin-value.coinValue
+    timeout: 30
+    memorySize: 128
+    events:
+      - http:
+          path: beacons/coin_value
+          method: get
+          caching:
+            enabled: true
+            ttlInSeconds: 120
+            cacheKeyParameters:
+              - name: request.path.symbol
