@@ -7,7 +7,7 @@ import { initDb } from './database';
 
 const config = getGlobalConfig();
 
-const getDataFeedIdFromDapiName = async (dapiName: string, db: Client) => {
+export const getDataFeedIdFromDapiName = async (dapiName: string, db: Client) => {
   const hashedDapiNameId = ethers.utils.formatBytes32String(dapiName);
 
   const operation = () =>
