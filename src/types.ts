@@ -34,4 +34,11 @@ export interface OverrideDatabaseOptions {
   readonly database?: string;
 }
 
+export interface CoinGeckoApiResult {
+  readonly id: string;
+  readonly symbol: string;
+  readonly name: string;
+  readonly current_price: number;
+}
+
 export type APIGatewayProxyHandler = Handler<APIGatewayProxyEvent, APIGatewayProxyResult>;

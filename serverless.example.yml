@@ -87,3 +87,9 @@ functions:
             ttlInSeconds: 120
             cacheKeyParameters:
               - name: request.path.symbol
+  coin_value_refresh:
+    handler: src/coin-value-refresh.coinValueRefresh
+    timeout: 30
+    memorySize: 128
+    events:
+      - schedule: rate(10 minutes)
