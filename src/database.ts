@@ -44,7 +44,7 @@ export const initDb = async (optionalOverrides?: OverrideDatabaseOptions) => {
     await db.query('select 1;');
   };
 
-  const goResponse = await go(operation, { totalTimeoutMs: 5_000, retries: 0 });
+  const goResponse = await go(operation, { attemptTimeoutMs: 5_000, retries: 2, totalTimeoutMs: 15_000 });
   if (!goResponse.success) {
     const typedError = goResponse.error as Error;
 

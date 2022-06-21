@@ -41,7 +41,7 @@ export const coinValue: APIGatewayProxyHandler = async (event): Promise<any> => 
       [symbol]
     );
 
-  const goResponse = await go(operation, { totalTimeoutMs: 5_000, retries: 2 });
+  const goResponse = await go(operation, { attemptTimeoutMs: 5_000, retries: 2, totalTimeoutMs: 15_000 });
   if (!goResponse.success) {
     const e = goResponse.error as Error;
     console.error(goResponse.error);

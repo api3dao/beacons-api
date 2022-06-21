@@ -24,7 +24,7 @@ export const getDataFeedIdFromDapiName = async (dapiName: string, db: Client) =>
       [hashedDapiNameId]
     );
 
-  const goResponse = await go(operation, { totalTimeoutMs: 5_000, retries: 2 });
+  const goResponse = await go(operation, { attemptTimeoutMs: 5_000, retries: 2, totalTimeoutMs: 15_000 });
   if (!goResponse.success) {
     const e = goResponse.error as Error;
     console.error(goResponse.error);
@@ -98,7 +98,7 @@ export const chainValueDataPoint: APIGatewayProxyHandler = async (event): Promis
       [chainId, currentDataFeedId]
     );
 
-  const goResponse = await go(operation, { totalTimeoutMs: 5_000, retries: 2 });
+  const goResponse = await go(operation, { attemptTimeoutMs: 5_000, retries: 2, totalTimeoutMs: 15_000 });
   if (!goResponse.success) {
     const e = goResponse.error as Error;
     console.error(goResponse.error);
