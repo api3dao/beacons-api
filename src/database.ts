@@ -1,5 +1,5 @@
 import tls from 'tls';
-import { go } from '@api3/airnode-utilities';
+import { go } from '@api3/promise-utils';
 import { Client } from 'pg';
 import { OverrideDatabaseOptions } from './types';
 import { sendToOpsGenieLowLevel } from './opsgenie-utils';
@@ -44,9 +44,9 @@ export const initDb = async (optionalOverrides?: OverrideDatabaseOptions) => {
     await db.query('select 1;');
   };
 
-  const [err] = await go(operation, { timeoutMs: 5_000, retries: 0 });
-  if (err) {
-    const typedError = err as Error;
+  const goResponse = await go(operation, { totalTimeoutMs: 5_000, retries: 0 });
+  if (!goResponse.success) {
+    const typedError = goResponse.error as Error;
 
     await sendToOpsGenieLowLevel({
       message: 'Database connection failed',
