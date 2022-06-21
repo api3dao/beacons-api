@@ -44,10 +44,9 @@ const fetchCoinValues = async (coinGeckoIds: string[]) => {
   }
 
   return result.data as CoinGeckoApiResult[];
-}
+};
 
 export const coinValueRefresh: ScheduledHandler = async (): Promise<any> => {
-
   const db = await initDb();
   if (db === undefined) {
     console.error('An error has occurred while trying to initialize the database');
@@ -60,11 +59,11 @@ export const coinValueRefresh: ScheduledHandler = async (): Promise<any> => {
     return;
   }
 
-	const coinValues = await fetchCoinValues(coinGeckoIds);
-	if(coinValues === undefined) {
-		console.error('Could not get any result from CoinGecko API.');
-		return;
-	}
+  const coinValues = await fetchCoinValues(coinGeckoIds);
+  if (coinValues === undefined) {
+    console.error('Could not get any result from CoinGecko API.');
+    return;
+  }
 
   const operation = async () =>
     db.query(
@@ -75,8 +74,7 @@ export const coinValueRefresh: ScheduledHandler = async (): Promise<any> => {
 			as updated(symbol, value)
 			where current.symbol = updated.symbol;
 			`,
-      [coinValues.map((cv) => (cv.symbol)), 
-			coinValues.map((cv) => (cv.current_price))]
+      [coinValues.map((cv) => cv.symbol), coinValues.map((cv) => cv.current_price)]
     );
 
   const goResponse = await go(operation, { attemptTimeoutMs: 5_000, retries: 2, totalTimeoutMs: 15_000 });

@@ -95,7 +95,7 @@ export const lastTransactions: APIGatewayProxyHandler = async (event): Promise<a
       [queryChainId, queryBeaconId, queryTransactionCountLimit]
     );
 
-    const goResponse = await go(operation, { attemptTimeoutMs: 5_000, retries: 2, totalTimeoutMs: 15_000 });
+  const goResponse = await go(operation, { attemptTimeoutMs: 5_000, retries: 2, totalTimeoutMs: 15_000 });
   if (!goResponse.success) {
     const e = goResponse.error as Error;
     console.error(goResponse.error);

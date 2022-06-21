@@ -33,7 +33,7 @@ export const getDataFeedIdFromDapiName = async (dapiName: string, db: Client) =>
   }
 
   const queryResult = goResponse.data;
-  
+
   if (!queryResult?.rows[0]?.dataFeedId) {
     console.error('Could not find dataFeedId for the given dapiName');
     return;

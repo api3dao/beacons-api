@@ -9,7 +9,6 @@ export const symbolSchema = z.string();
 const config = getGlobalConfig();
 
 export const coinValue: APIGatewayProxyHandler = async (event): Promise<any> => {
-
   const parsedSymbol = symbolSchema.safeParse(event.queryStringParameters?.symbol);
   if (!parsedSymbol.success) {
     return {
@@ -54,13 +53,13 @@ export const coinValue: APIGatewayProxyHandler = async (event): Promise<any> => 
   }
 
   const queryResult = goResponse.data;
-  
-  if(queryResult?.rowCount === 0) {
+
+  if (queryResult?.rowCount === 0) {
     return {
-        statusCode: 400,
-        headers: config.headers,
-        body: makeError('Value not found for the given symbol'),
-      };
+      statusCode: 400,
+      headers: config.headers,
+      body: makeError('Value not found for the given symbol'),
+    };
   }
 
   const payload = queryResult.rows[0];
