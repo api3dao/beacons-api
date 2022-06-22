@@ -1,9 +1,10 @@
-import { go } from '@api3/airnode-utilities';
+import { go } from '@api3/promise-utils';
 import { APIGatewayProxyHandler } from 'aws-lambda';
 import { z } from 'zod';
 import { getGlobalConfig, makeError } from './utils';
 import { initDb } from './database';
 import { getDataFeedIdFromDapiName } from './on-chain-value';
+import { goQueryConfig } from './constants';
 
 export const dapiNameSchema = z.string();
 export const evmBeaconIdSchema = z.string().regex(/^0x[a-fA-F0-9]{64}$/);
@@ -95,10 +96,10 @@ export const lastTransactions: APIGatewayProxyHandler = async (event): Promise<a
       [queryChainId, queryBeaconId, queryTransactionCountLimit]
     );
 
-  const [err, queryResult] = await go(operation, { timeoutMs: 5_000, retries: 2 });
-  if (err) {
-    const e = err as Error;
-    console.error(err);
+  const goResponse = await go(operation, goQueryConfig);
+  if (!goResponse.success) {
+    const e = goResponse.error as Error;
+    console.error(goResponse.error);
     console.error(e.stack);
     return {
       statusCode: 500,
@@ -107,7 +108,7 @@ export const lastTransactions: APIGatewayProxyHandler = async (event): Promise<a
     };
   }
 
-  const payload = queryResult.rows;
+  const payload = goResponse.data.rows;
 
   return {
     statusCode: 200,
