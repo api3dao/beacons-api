@@ -5,6 +5,28 @@ import { Client } from 'pg';
 import { initDb } from './database';
 import { CoinGeckoApiResult } from './types';
 
+const createCoinValueTable = async (db: Client) => {
+  const operation = async () =>
+    db.query(
+      `
+    CREATE TABLE IF NOT EXISTS coin_value(
+      symbol VARCHAR(40) PRIMARY KEY,
+      coingecko_api_name VARCHAR(40),
+      value DOUBLE PRECISION NOT NULL,
+      updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    );
+    `
+    );
+
+  const goResponse = await go(operation, { attemptTimeoutMs: 5_000, retries: 2, totalTimeoutMs: 15_000 });
+  if (!goResponse.success) {
+    const e = goResponse.error as Error;
+    console.error(goResponse.error);
+    console.error(e.stack);
+  }
+};
+
 const queryCoinGeckoIds = async (db: Client): Promise<string[]> => {
   const operation = async () =>
     db.query(
@@ -52,6 +74,8 @@ export const coinValueRefresh: ScheduledHandler = async (): Promise<any> => {
     console.error('An error has occurred while trying to initialize the database');
     return;
   }
+
+  await createCoinValueTable(db);
 
   const coinGeckoIds = await queryCoinGeckoIds(db);
   if (coinGeckoIds.length === 0) {
