@@ -9,7 +9,7 @@ const queryCoinGeckoIds = async (db: Client): Promise<string[]> => {
   const operation = async () =>
     db.query(
       `
-			SELECT coingecko_api_name as "coinGeckoId"
+			SELECT coingecko_api_name AS "coinGeckoId"
 			FROM coin_value
 			`
     );
@@ -68,11 +68,11 @@ export const coinValueRefresh: ScheduledHandler = async (): Promise<any> => {
   const operation = async () =>
     db.query(
       `
-			update coin_value as current set
+			UPDATE coin_value AS current SET
 			value = updated.value, updated_at = current_timestamp
-			from (select unnest($1::text[]) as symbol, unnest($2::double precision[]) as value)
-			as updated(symbol, value)
-			where current.symbol = updated.symbol;
+			FROM (SELECT UNNEST($1::TEXT[]) AS symbol, UNNEST($2::DOUBLE PRECISION[]) AS value)
+			AS updated(symbol, value)
+			WHERE current.symbol = updated.symbol;
 			`,
       [coinValues.map((cv) => cv.symbol), coinValues.map((cv) => cv.current_price)]
     );
