@@ -93,11 +93,14 @@ export const coinValueRefresh: ScheduledHandler = async (): Promise<any> => {
   const operation = async () =>
     db.query(
       `
-			UPDATE coin_value AS current SET
-			value = updated.value, updated_at = current_timestamp
-			FROM (SELECT UNNEST($1::TEXT[]) AS symbol, UNNEST($2::DOUBLE PRECISION[]) AS value)
+			UPDATE coin_value AS current 
+      SET
+			  value = updated.value, updated_at = current_timestamp
+			FROM 
+        (SELECT UNNEST($1::TEXT[]) AS symbol, UNNEST($2::DOUBLE PRECISION[]) AS value)
 			AS updated(symbol, value)
-			WHERE current.symbol = updated.symbol;
+			WHERE 
+        current.symbol = updated.symbol;
 			`,
       [coinValues.map((cv) => cv.symbol), coinValues.map((cv) => cv.current_price)]
     );
