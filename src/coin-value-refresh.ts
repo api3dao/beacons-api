@@ -2,6 +2,7 @@ import { go } from '@api3/promise-utils';
 import { ScheduledHandler } from 'aws-lambda';
 import axios from 'axios';
 import { Client } from 'pg';
+import { goQueryConfig } from './constants';
 import { initDb } from './database';
 import { CoinGeckoApiResult } from './types';
 
@@ -19,7 +20,7 @@ const createCoinValueTable = async (db: Client) => {
     `
     );
 
-  const goResponse = await go(operation, { attemptTimeoutMs: 5_000, retries: 2, totalTimeoutMs: 15_000 });
+  const goResponse = await go(operation, goQueryConfig);
   if (!goResponse.success) {
     const e = goResponse.error as Error;
     console.error(goResponse.error);
@@ -36,7 +37,7 @@ const queryCoinGeckoIds = async (db: Client): Promise<string[]> => {
 			`
     );
 
-  const goResponse = await go(operation, { attemptTimeoutMs: 5_000, retries: 2, totalTimeoutMs: 15_000 });
+  const goResponse = await go(operation, goQueryConfig);
   if (!goResponse.success) {
     const e = goResponse.error as Error;
     console.error(goResponse.error);
@@ -101,7 +102,7 @@ export const coinValueRefresh: ScheduledHandler = async (): Promise<any> => {
       [coinValues.map((cv) => cv.symbol), coinValues.map((cv) => cv.current_price)]
     );
 
-  const goResponse = await go(operation, { attemptTimeoutMs: 5_000, retries: 2, totalTimeoutMs: 15_000 });
+  const goResponse = await go(operation, goQueryConfig);
   if (!goResponse.success) {
     const e = goResponse.error as Error;
     console.error(goResponse.error);

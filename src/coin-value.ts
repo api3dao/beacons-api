@@ -3,6 +3,7 @@ import { APIGatewayProxyHandler } from 'aws-lambda';
 import { z } from 'zod';
 import { getGlobalConfig, makeError } from './utils';
 import { initDb } from './database';
+import { goQueryConfig } from './constants';
 
 export const symbolSchema = z.string();
 
@@ -40,7 +41,7 @@ export const coinValue: APIGatewayProxyHandler = async (event): Promise<any> => 
       [symbol]
     );
 
-  const goResponse = await go(operation, { attemptTimeoutMs: 5_000, retries: 2, totalTimeoutMs: 15_000 });
+  const goResponse = await go(operation, goQueryConfig);
   if (!goResponse.success) {
     const e = goResponse.error as Error;
     console.error(goResponse.error);

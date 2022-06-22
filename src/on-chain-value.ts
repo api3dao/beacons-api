@@ -4,6 +4,7 @@ import { ethers } from 'ethers';
 import { Client } from 'pg';
 import { getGlobalConfig, makeError } from './utils';
 import { initDb } from './database';
+import { goQueryConfig } from './constants';
 
 const config = getGlobalConfig();
 
@@ -24,7 +25,7 @@ export const getDataFeedIdFromDapiName = async (dapiName: string, db: Client) =>
       [hashedDapiNameId]
     );
 
-  const goResponse = await go(operation, { attemptTimeoutMs: 5_000, retries: 2, totalTimeoutMs: 15_000 });
+  const goResponse = await go(operation, goQueryConfig);
   if (!goResponse.success) {
     const e = goResponse.error as Error;
     console.error(goResponse.error);
@@ -98,7 +99,7 @@ export const chainValueDataPoint: APIGatewayProxyHandler = async (event): Promis
       [chainId, currentDataFeedId]
     );
 
-  const goResponse = await go(operation, { attemptTimeoutMs: 5_000, retries: 2, totalTimeoutMs: 15_000 });
+  const goResponse = await go(operation, goQueryConfig);
   if (!goResponse.success) {
     const e = goResponse.error as Error;
     console.error(goResponse.error);

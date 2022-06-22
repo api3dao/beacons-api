@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { getGlobalConfig, makeError } from './utils';
 import { initDb } from './database';
 import { getDataFeedIdFromDapiName } from './on-chain-value';
+import { goQueryConfig } from './constants';
 
 export const dapiNameSchema = z.string();
 export const evmBeaconIdSchema = z.string().regex(/^0x[a-fA-F0-9]{64}$/);
@@ -95,7 +96,7 @@ export const lastTransactions: APIGatewayProxyHandler = async (event): Promise<a
       [queryChainId, queryBeaconId, queryTransactionCountLimit]
     );
 
-  const goResponse = await go(operation, { attemptTimeoutMs: 5_000, retries: 2, totalTimeoutMs: 15_000 });
+  const goResponse = await go(operation, goQueryConfig);
   if (!goResponse.success) {
     const e = goResponse.error as Error;
     console.error(goResponse.error);
