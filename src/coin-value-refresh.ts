@@ -6,7 +6,7 @@ import { goQueryConfig } from './constants';
 import { initDb } from './database';
 import { CoinGeckoApiResult } from './types';
 
-const createCoinValueTable = async (db: Client) => {
+const ensureTablesCreated = async (db: Client) => {
   const operation = async () =>
     db.query(
       `
@@ -16,6 +16,12 @@ const createCoinValueTable = async (db: Client) => {
       value DOUBLE PRECISION NOT NULL,
       updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
       created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE TABLE IF NOT EXISTS token_historic_prices (
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+      symbol VARCHAR(40),
+      value DOUBLE PRECISION NOT NULL,
+      PRIMARY KEY(created_at, symbol)
     );
     `
     );
@@ -76,7 +82,7 @@ export const coinValueRefresh: ScheduledHandler = async (): Promise<any> => {
     return;
   }
 
-  await createCoinValueTable(db);
+  await ensureTablesCreated(db);
 
   const coinGeckoIds = await queryCoinGeckoIds(db);
   if (coinGeckoIds.length === 0) {
@@ -90,7 +96,10 @@ export const coinValueRefresh: ScheduledHandler = async (): Promise<any> => {
     return;
   }
 
-  const operation = async () =>
+  const symbols = coinValues.map((cv) => cv.symbol);
+  const prices = coinValues.map((cv) => cv.current_price);
+
+  const updateValueOperation = async () =>
     db.query(
       `
 			UPDATE coin_value AS current 
@@ -102,16 +111,33 @@ export const coinValueRefresh: ScheduledHandler = async (): Promise<any> => {
 			WHERE 
         current.symbol = updated.symbol;
 			`,
-      [coinValues.map((cv) => cv.symbol), coinValues.map((cv) => cv.current_price)]
+      [symbols, prices]
     );
 
-  const goResponse = await go(operation, goQueryConfig);
-  if (!goResponse.success) {
-    const e = goResponse.error as Error;
-    console.error(goResponse.error);
+  const goUpdateValueResponse = await go(updateValueOperation, goQueryConfig);
+  if (!goUpdateValueResponse.success) {
+    const e = goUpdateValueResponse.error as Error;
+    console.error(goUpdateValueResponse.error);
     console.error(e.stack);
     return;
   }
+
+  const addHistoricDataOperation = async () =>
+  db.query(
+    `
+    INSERT INTO token_historic_prices (symbol, value) 
+    SELECT * FROM UNNEST ($1::TEXT[], $2::DOUBLE PRECISION[]);
+    `,
+    [symbols, prices]
+  );
+
+const goAddHistoricDataResponse = await go(addHistoricDataOperation, goQueryConfig);
+if (!goAddHistoricDataResponse.success) {
+  const e = goAddHistoricDataResponse.error as Error;
+  console.error(goAddHistoricDataResponse.error);
+  console.error(e.stack);
+  return;
+}
 
   console.log('Values updated successfully');
 };
