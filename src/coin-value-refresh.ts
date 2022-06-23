@@ -123,21 +123,21 @@ export const coinValueRefresh: ScheduledHandler = async (): Promise<any> => {
   }
 
   const addHistoricDataOperation = async () =>
-  db.query(
-    `
+    db.query(
+      `
     INSERT INTO token_historic_prices (symbol, value) 
     SELECT * FROM UNNEST ($1::TEXT[], $2::DOUBLE PRECISION[]);
     `,
-    [symbols, prices]
-  );
+      [symbols, prices]
+    );
 
-const goAddHistoricDataResponse = await go(addHistoricDataOperation, goQueryConfig);
-if (!goAddHistoricDataResponse.success) {
-  const e = goAddHistoricDataResponse.error as Error;
-  console.error(goAddHistoricDataResponse.error);
-  console.error(e.stack);
-  return;
-}
+  const goAddHistoricDataResponse = await go(addHistoricDataOperation, goQueryConfig);
+  if (!goAddHistoricDataResponse.success) {
+    const e = goAddHistoricDataResponse.error as Error;
+    console.error(goAddHistoricDataResponse.error);
+    console.error(e.stack);
+    return;
+  }
 
   console.log('Values updated successfully');
 };
