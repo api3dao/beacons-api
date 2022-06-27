@@ -190,7 +190,9 @@ module.exports = {
   // Whether to use watchman for file crawling
   // watchman: true,
   displayName: 'unit',
-  name: 'unit',
-  setupFiles: ['<rootDir>/test/setup/init/set-define-property.ts'],
+  setupFiles: [
+    '<rootDir>/test/setup/init/set-define-property.ts', 
+    '<rootDir>/test/setup/setEnvVars.ts'
+  ],
   testMatch: ['**/__tests__/**/*.[jt]s?(x)', '**/?(*.)+(spec|test).[tj]s?(x)'],
 };

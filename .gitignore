@@ -20,3 +20,4 @@ aws.env
 **/secrets.env
 /serverless.yml
 /telemetryConfig.json
+/test/setup/setEnvVars.ts
