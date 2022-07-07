@@ -41,4 +41,9 @@ export interface CoinGeckoApiResult {
   readonly current_price: number;
 }
 
+export interface BeaconDeviation {
+  readonly time: string;
+  readonly deviation: number;
+}
+
 export type APIGatewayProxyHandler = Handler<APIGatewayProxyEvent, APIGatewayProxyResult>;
