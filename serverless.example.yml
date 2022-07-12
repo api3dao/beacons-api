@@ -107,3 +107,17 @@ functions:
     memorySize: 128
     events:
       - schedule: rate(10 minutes)
+  volatility:
+    handler: src/volatility.getVolatility
+    timeout: 30
+    memorySize: 128
+    events:
+      - http:
+          path: beacons/volatility
+          method: get
+          caching:
+            enabled: true
+            ttlInSeconds: 120
+            cacheKeyParameters:
+              - name: request.path.chainId
+              - name: request.path.beaconId
