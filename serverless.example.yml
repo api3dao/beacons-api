@@ -49,10 +49,21 @@ functions:
       - http:
           path: beacons/on_chain_value
           method: get
+          # Functions often require an associated CORS OPTIONS method enabled on the API gateway to satisfy Chrome pre-flight
+          # requests. An OPTIONS method is generally not required for GET requests but is always required by Chrome for
+          # POST requests.
+          #
+          # More info available here: https://www.serverless.com/blog/cors-api-gateway-survival-guide/
+          cors:
+            headers: '*'
+            origin: 'http://domain-one.com,https://domain-two.com'
+            methods:
+              - OPTIONS
+              - GET
           caching:
             enabled: true
             ttlInSeconds: 120
-            cacheKeyParameters: # changes in these query parameters dictate whether a cached value is used
+            cacheKeyParameters:
               - name: request.path.chainId
               - name: request.path.dataFeedId
               - name: request.path.airnodeAddress
@@ -61,11 +72,17 @@ functions:
   last_transactions:
     handler: src/last-transactions.lastTransactions
     timeout: 30
-    memorySize: 256
+    memorySize: 128
     events:
       - http:
           path: beacons/last_transactions
           method: get
+          cors:
+            headers: '*'
+            origin: '*'
+            methods:
+              - OPTIONS
+              - GET
           caching:
             enabled: true
             ttlInSeconds: 120
@@ -73,20 +90,6 @@ functions:
               - name: request.path.chainId
               - name: request.path.beaconId
               - name: request.path.dapiName
-              - name: request.path.transactionCount
-
-  # This function often requires an associated CORS OPTIONS method enabled on the API gateway to satisfy Chrome pre-flight
-  # requests.
-  # More info available here: https://www.serverless.com/blog/cors-api-gateway-survival-guide/
-  validateAndSendEmail:
-    handler: src/validate-and-send.validateAndSendEmail
-    timeout: 20
-    memorySize: 128
-    events:
-      - http:
-          path: /contactus
-          method: post
-          cors: true
 
   coin_value:
     handler: src/coin-value.coinValue
@@ -96,17 +99,25 @@ functions:
       - http:
           path: beacons/coin_value
           method: get
+          cors:
+            headers: '*'
+            origin: 'http://domain-one.com,https://domain-two.com'
+            methods:
+              - OPTIONS
+              - GET
           caching:
             enabled: true
-            ttlInSeconds: 120
+            ttlInSeconds: 60
             cacheKeyParameters:
               - name: request.path.symbol
+
   coin_value_refresh:
     handler: src/coin-value-refresh.coinValueRefresh
     timeout: 30
     memorySize: 128
     events:
-      - schedule: rate(10 minutes)
+      - schedule: rate(1 minute)
+
   volatility:
     handler: src/volatility.getVolatility
     timeout: 30
@@ -115,9 +126,30 @@ functions:
       - http:
           path: beacons/volatility
           method: get
+          cors:
+            headers: '*'
+            origin: 'http://domain-one.com,https://domain-two.com'
+            methods:
+              - OPTIONS
+              - GET
           caching:
-            enabled: true
+            enabled: false
             ttlInSeconds: 120
             cacheKeyParameters:
               - name: request.path.chainId
               - name: request.path.beaconId
+  validateAndSendEmail:
+    handler: src/validate-and-send.validateAndSendEmail
+    timeout: 20
+    memorySize: 128
+    events:
+      - http:
+          path: /contactus
+          method: post
+          private: false
+          cors:
+            headers: '*'
+            origin: 'http://domain-one.com,https://domain-two.com'
+            methods:
+              - OPTIONS
+              - POST

@@ -27,6 +27,7 @@ export const contactUsPayloadSchema = z
       chainName: z.string(),
       items: z.array(
         z.object({
+          productType: z.string().optional(),
           beaconId: evmBeaconIdSchema,
           beaconName: z.string(),
           coverage: z.number(),

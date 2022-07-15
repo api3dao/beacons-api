@@ -5,7 +5,7 @@ import { z } from 'zod';
 import { Client } from '@sendgrid/client';
 // There doesn't appear to be a way around `require` here
 import sgMail = require('@sendgrid/mail');
-import { getGlobalConfig } from './utils';
+import { debugLog, getGlobalConfig } from './utils';
 import { contactUsPayloadSchema } from './validation/validate-and-send-form-data';
 import { goQueryConfig } from './constants';
 
@@ -37,12 +37,16 @@ export const validateAndSendEmail: APIGatewayProxyHandler = async (event) => {
   }
 
   if (process.env.DEBUG) {
-    console.debug(`Event: `, JSON.stringify(event, null, 2));
+    debugLog(`Event: `, JSON.stringify(event, null, 2));
   }
 
   const parsedBody = JSON.parse(event.body);
   const safeBody = contactUsPayloadSchema.safeParse(parsedBody);
   if (!safeBody.success) {
+    if (process.env.DEBUG) {
+      debugLog(safeBody.error);
+    }
+
     return {
       statusCode: 400,
       headers: config.headers,
@@ -64,18 +68,10 @@ export const validateAndSendEmail: APIGatewayProxyHandler = async (event) => {
     };
   }
 
-  if (!validateTokenResponse.data.isValidCaptcha) {
-    return {
-      statusCode: 400,
-      headers: config.headers,
-      body: 'Invalid captcha',
-    };
-  }
-
   const sendEmailResult = await go(async () => await sendEmail(contactForm), goQueryConfig);
 
   if (!sendEmailResult.success) {
-    console.error(JSON.stringify(sendEmailResult.error, null, 2));
+    debugLog(JSON.stringify(sendEmailResult.error, null, 2));
 
     return {
       statusCode: 500,
@@ -141,6 +137,10 @@ const validateToken = async (token: string | null) => {
     const response = await axios.post(
       `https://www.google.com/recaptcha/api/siteverify?secret=${process.env.RECAPTCHA_SECRET_KEY}&response=${token}`
     );
+
+    if (process.env.DEBUG) {
+      debugLog(response.data);
+    }
 
     return response.data.success;
   } catch (error) {

@@ -8,17 +8,14 @@ import { goQueryConfig } from './constants';
 
 export const dapiNameSchema = z.string();
 export const evmBeaconIdSchema = z.string().regex(/^0x[a-fA-F0-9]{64}$/);
-export const evmAddressSchema = z.string().regex(/^0x[a-fA-F0-9]{40}$/);
 export const chainIdSchema = z.string().regex(/^\d+$/);
 
 export const DEFAULT_TRANSACTION_COUNT = 5;
-export const DEFAULT_FROM_BLOCK_SIZE = 2000;
-export const MAX_TRANSACTIONS_FRESHNESS = 60_000;
 
 const config = getGlobalConfig();
 
 export const lastTransactions: APIGatewayProxyHandler = async (event): Promise<any> => {
-  const { chainId, beaconId, dapiName, transactionCountLimit } = event.queryStringParameters ?? {};
+  const { chainId, beaconId, dapiName } = event.queryStringParameters ?? {};
 
   if (!(dapiName || beaconId)) {
     return {
@@ -75,10 +72,7 @@ export const lastTransactions: APIGatewayProxyHandler = async (event): Promise<a
     };
   }
 
-  const parsedTransactionCountLimit = transactionCountLimit ? parseInt(transactionCountLimit) : NaN;
-  const queryTransactionCountLimit = !isNaN(parsedTransactionCountLimit)
-    ? parsedTransactionCountLimit
-    : DEFAULT_TRANSACTION_COUNT;
+  const queryTransactionCountLimit = DEFAULT_TRANSACTION_COUNT;
 
   const operation = async () =>
     db.query(
@@ -109,6 +103,14 @@ export const lastTransactions: APIGatewayProxyHandler = async (event): Promise<a
   }
 
   const payload = goResponse.data.rows;
+
+  if (payload.length === 0) {
+    return {
+      statusCode: 400,
+      headers: config.headers,
+      body: makeError('Empty results returned from data warehouse'),
+    };
+  }
 
   return {
     statusCode: 200,
