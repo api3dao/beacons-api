@@ -3,8 +3,19 @@ import path from 'path';
 import { APIGatewayProxyEvent, Context } from 'aws-lambda';
 import * as database from './database';
 import { chainValueDataPoint, onChainValueQueryTemplate } from './on-chain-value';
+import * as utils from './utils';
 
 describe('handles http queries for on-chain-value for single dataFeedIds', () => {
+  beforeEach(() => {
+    jest
+      .spyOn(utils, 'getGlobalConfig')
+      .mockReturnValue(
+        JSON.parse(
+          fs.readFileSync(path.join(__dirname, '..', 'test', 'fixtures', 'telemetryConfig.example.json')).toString()
+        )
+      );
+  });
+
   it('responds to a valid query', async () => {
     const data = JSON.parse(
       fs.readFileSync(path.join(__dirname, '..', 'test', 'fixtures', 'on-chain-value-example.json')).toString()

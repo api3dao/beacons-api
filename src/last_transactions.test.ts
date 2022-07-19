@@ -5,8 +5,19 @@ import { Client } from 'pg';
 import { DEFAULT_TRANSACTION_COUNT, lastTransactions, lastTransactionsQueryTemplate } from './last-transactions';
 import * as database from './database';
 import * as dapiNames from './dapi-names';
+import * as utils from './utils';
 
 describe('handles http queries for latest transactions for single dataFeedIds', () => {
+  beforeEach(() => {
+    jest
+      .spyOn(utils, 'getGlobalConfig')
+      .mockReturnValue(
+        JSON.parse(
+          fs.readFileSync(path.join(__dirname, '..', 'test', 'fixtures', 'telemetryConfig.example.json')).toString()
+        )
+      );
+  });
+
   it('responds to a valid query', async () => {
     const validRows = JSON.parse(
       fs.readFileSync(path.join(__dirname, '..', 'test', 'fixtures', 'last-transactions-example.json')).toString()
@@ -155,6 +166,16 @@ describe('handles http queries for latest transactions for single dataFeedIds', 
 });
 
 describe('handles http queries for latest transactions for dAPIs', () => {
+  beforeEach(() => {
+    jest
+      .spyOn(utils, 'getGlobalConfig')
+      .mockReturnValue(
+        JSON.parse(
+          fs.readFileSync(path.join(__dirname, '..', 'test', 'fixtures', 'telemetryConfig.example.json')).toString()
+        )
+      );
+  });
+
   it('responds to a valid query', async () => {
     const validDataFeedIdRows = JSON.parse(
       fs.readFileSync(path.join(__dirname, '..', 'test', 'fixtures', 'last-transactions-example.json')).toString()
