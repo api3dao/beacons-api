@@ -63,7 +63,7 @@ functions:
           caching:
             enabled: true
             ttlInSeconds: 120
-            cacheKeyParameters:
+            cacheKeyParameters: # changes in these query parameters dictate whether a cached value is used
               - name: request.path.chainId
               - name: request.path.dataFeedId
               - name: request.path.airnodeAddress

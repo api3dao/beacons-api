@@ -1,20 +1,31 @@
 import { go } from '@api3/promise-utils';
-import { APIGatewayProxyHandler } from 'aws-lambda';
+import { APIGatewayProxyHandler, APIGatewayProxyResult } from 'aws-lambda';
 import { z } from 'zod';
 import { getGlobalConfig, makeError } from './utils';
 import { initDb } from './database';
-import { getDataFeedIdFromDapiName } from './on-chain-value';
 import { goQueryConfig } from './constants';
+import { getDataFeedIdFromDapiName } from './dapi-names';
 
 export const dapiNameSchema = z.string();
 export const evmBeaconIdSchema = z.string().regex(/^0x[a-fA-F0-9]{64}$/);
 export const chainIdSchema = z.string().regex(/^\d+$/);
 
-export const DEFAULT_TRANSACTION_COUNT = 5;
+export const DEFAULT_TRANSACTION_COUNT = 40;
+export const lastTransactionsQueryTemplate = `
+    SELECT 
+    event_data -> 'blockNumber' as "blockNumber", 
+    event_data -> 'parsedLog' as "parsedLog",
+    event_data -> 'topics' as "topics",
+    event_data -> 'transactionHash' as "transactionHash"
+    FROM dapi_events 
+    WHERE chain = $1 AND 
+    event_data->'parsedLog'->'args'->> 0 = $2
+    ORDER by block DESC LIMIT $3;
+  `;
 
 const config = getGlobalConfig();
 
-export const lastTransactions: APIGatewayProxyHandler = async (event): Promise<any> => {
+export const lastTransactions: APIGatewayProxyHandler = async (event): Promise<APIGatewayProxyResult> => {
   const { chainId, beaconId, dapiName } = event.queryStringParameters ?? {};
 
   if (!(dapiName || beaconId)) {
@@ -61,7 +72,7 @@ export const lastTransactions: APIGatewayProxyHandler = async (event): Promise<a
 
   const queryChainId = parsedChainId.data;
   const queryBeaconId = parsedDapiName.success
-    ? await getDataFeedIdFromDapiName(parsedDapiName.data, db)
+    ? await getDataFeedIdFromDapiName(parsedDapiName.data, queryChainId, db)
     : parsedBeaconId.success && parsedBeaconId.data;
 
   if (!queryBeaconId) {
@@ -75,20 +86,7 @@ export const lastTransactions: APIGatewayProxyHandler = async (event): Promise<a
   const queryTransactionCountLimit = DEFAULT_TRANSACTION_COUNT;
 
   const operation = async () =>
-    db.query(
-      `
-    SELECT 
-    event_data -> 'blockNumber' as "blockNumber", 
-    event_data -> 'parsedLog' as "parsedLog",
-    event_data -> 'topics' as "topics",
-    event_data -> 'transactionHash' as "transactionHash"
-    FROM dapi_events 
-    WHERE chain = $1 AND 
-    event_data->'parsedLog'->'args'->> 0 = $2
-    ORDER by block DESC LIMIT $3;
-  `,
-      [queryChainId, queryBeaconId, queryTransactionCountLimit]
-    );
+    db.query(lastTransactionsQueryTemplate, [queryChainId, queryBeaconId, queryTransactionCountLimit]);
 
   const goResponse = await go(operation, goQueryConfig);
   if (!goResponse.success) {
