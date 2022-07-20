@@ -9,6 +9,7 @@ on:
 
 env:
   TARGET_NODE_VERSION: '14.17.1'
+  TELEMETRY_CONFIG: '/home/runner/work/beacons-api/beacons-api/test/fixtures/telemetryConfig.example.json'
 
 jobs:
   lint-build-test:
