@@ -6,8 +6,6 @@ import { DEFAULT_TRANSACTION_COUNT, lastTransactions, lastTransactionsQueryTempl
 import * as database from './database';
 import * as dapiNames from './dapi-names';
 
-process.env.TELEMETRY_CONFIG = path.join(__dirname, '..', 'test', 'fixtures', 'telemetryConfig.example.json');
-
 describe('handles http queries for latest transactions for single dataFeedIds', () => {
   it('responds to a valid query', async () => {
     const validRows = JSON.parse(

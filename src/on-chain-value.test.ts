@@ -4,8 +4,6 @@ import { APIGatewayProxyEvent, Context } from 'aws-lambda';
 import * as database from './database';
 import { chainValueDataPoint, onChainValueQueryTemplate } from './on-chain-value';
 
-process.env.TELEMETRY_CONFIG = path.join(__dirname, '..', 'test', 'fixtures', 'telemetryConfig.example.json');
-
 describe('handles http queries for on-chain-value for single dataFeedIds', () => {
   it('responds to a valid query', async () => {
     const data = JSON.parse(

@@ -3,12 +3,7 @@ import { ethers } from 'ethers';
 import { go } from '@api3/promise-utils';
 import { goQueryConfig } from './constants';
 
-export const getDataFeedIdFromDapiName = async (dapiName: string, chainId: string, db: Client) => {
-  const hashedDapiNameId = ethers.utils.formatBytes32String(dapiName);
-
-  const operation = () =>
-    db.query(
-      `
+export const dapiNameQueryTemplate = `
     SELECT event_data->'parsedLog'->'args'->> 1 as "dataFeedId"
     FROM dapi_events 
     WHERE 
@@ -17,9 +12,12 @@ export const getDataFeedIdFromDapiName = async (dapiName: string, chainId: strin
     event_data->'parsedLog'->'args'->> 0 = $1 
     ORDER BY block DESC
     LIMIT 1;
-  `,
-      [chainId, hashedDapiNameId]
-    );
+  `;
+
+export const getDataFeedIdFromDapiName = async (dapiName: string, chainId: string, db: Client) => {
+  const hashedDapiNameId = ethers.utils.formatBytes32String(dapiName);
+
+  const operation = () => db.query(dapiNameQueryTemplate, [chainId, hashedDapiNameId]);
 
   const goResponse = await go(operation, goQueryConfig);
   if (!goResponse.success) {
