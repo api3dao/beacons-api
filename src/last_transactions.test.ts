@@ -41,12 +41,8 @@ describe('handles http queries for latest transactions for single dataFeedIds', 
 
     expect(result).toBeDefined();
 
-    if (!result) {
-      return;
-    }
-
-    expect(result.statusCode).toEqual(200);
-    expect(result.body).toEqual(JSON.stringify(validRows));
+    expect(result?.statusCode).toEqual(200);
+    expect(result?.body).toEqual(JSON.stringify(validRows));
   });
 
   it('indicates a 400 status code for an empty response', async () => {
@@ -79,12 +75,8 @@ describe('handles http queries for latest transactions for single dataFeedIds', 
 
     expect(result).toBeDefined();
 
-    if (!result) {
-      return;
-    }
-
-    expect(result.statusCode).toEqual(400);
-    expect(result.body).toEqual(`{"error":"Empty results returned from data warehouse"}`);
+    expect(result?.statusCode).toEqual(400);
+    expect(result?.body).toEqual(`{"error":"Empty results returned from data warehouse"}`);
   });
 
   it('indicates a 400 status code for an empty response', async () => {
@@ -117,12 +109,8 @@ describe('handles http queries for latest transactions for single dataFeedIds', 
 
     expect(result).toBeDefined();
 
-    if (!result) {
-      return;
-    }
-
-    expect(result.statusCode).toEqual(400);
-    expect(result.body).toEqual(`{"error":"Empty results returned from data warehouse"}`);
+    expect(result?.statusCode).toEqual(400);
+    expect(result?.body).toEqual(`{"error":"Empty results returned from data warehouse"}`);
   });
 
   it('returns a 400 status code for invalid parameters', async () => {
@@ -145,12 +133,8 @@ describe('handles http queries for latest transactions for single dataFeedIds', 
     expect(initDb).toHaveBeenCalledTimes(0);
     expect(result).toBeDefined();
 
-    if (!result) {
-      return;
-    }
-
-    expect(result.statusCode).toEqual(400);
-    expect(result.body).toEqual(`{"error":"Invalid beaconId"}`);
+    expect(result?.statusCode).toEqual(400);
+    expect(result?.body).toEqual(`{"error":"Invalid beaconId"}`);
   });
 });
 
@@ -203,12 +187,8 @@ describe('handles http queries for latest transactions for dAPIs', () => {
 
     expect(result).toBeDefined();
 
-    if (!result) {
-      return;
-    }
-
-    expect(result.statusCode).toEqual(200);
-    expect(result.body).toEqual(JSON.stringify(validDataFeedIdRows));
+    expect(result?.statusCode).toEqual(200);
+    expect(result?.body).toEqual(JSON.stringify(validDataFeedIdRows));
   });
 
   it('returns a 400 status code in response to a query for a non-existent dAPI name', async () => {
@@ -253,11 +233,7 @@ describe('handles http queries for latest transactions for dAPIs', () => {
 
     expect(result).toBeDefined();
 
-    if (!result) {
-      return;
-    }
-
-    expect(result.statusCode).toEqual(400);
-    expect(result.body).toEqual(`{"error":"Could not find the chainId from the provided dapiName"}`);
+    expect(result?.statusCode).toEqual(400);
+    expect(result?.body).toEqual(`{"error":"Could not find the chainId from the provided dapiName"}`);
   });
 });

@@ -38,11 +38,7 @@ describe('handles http queries for on-chain-value for single dataFeedIds', () =>
 
     expect(result).toBeDefined();
 
-    if (!result) {
-      return;
-    }
-
-    expect(result.statusCode).toEqual(200);
-    expect(result.body).toEqual(`{"beaconResponse":[{"hex":"0x0d9a1ece3a7ef800","type":"BigNumber"},926163856]}`);
+    expect(result?.statusCode).toEqual(200);
+    expect(result?.body).toEqual(`{"beaconResponse":[{"hex":"0x0d9a1ece3a7ef800","type":"BigNumber"},926163856]}`);
   });
 });
