@@ -56,10 +56,3 @@ rm -rf .build .serverless && yarn sls invoke local --function chain_value_data_p
 rm -rf .build .serverless && yarn sls invoke local --function coin_value --data '{ "queryStringParameters": {"symbol":"AVAX"}}'
 rm -rf .build .serverless && yarn sls invoke local --function volatility --data '{ "queryStringParameters": {"beaconId":"0x8dd297503e6e8b95c979677e9e6aecfee08ee5426bea72adff2d7a797f7bd69d", "chainId":"137"}}'
 ```
-
-If you're happy, authenticate with AWS and acquire credentials, as per the
-[serverless guide](https://www.serverless.com/framework/docs/providers/aws/guide/credentials).
-
-```shell
-yarn sls deploy --region us-east-1
-```
