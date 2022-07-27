@@ -2,7 +2,7 @@ import * as fs from 'fs';
 import path from 'path';
 import { APIGatewayProxyEvent, Context } from 'aws-lambda';
 import { Client } from 'pg';
-import { DEFAULT_TRANSACTION_COUNT, lastTransactions, lastTransactionsQueryTemplate } from './last-transactions';
+import { lastTransactions } from './last-transactions';
 import * as database from './database';
 import * as dapiNames from './dapi-names';
 
@@ -13,7 +13,7 @@ describe('handles http queries for latest transactions for single dataFeedIds', 
     );
 
     const initDb = jest.spyOn(database, 'initDb');
-    const mockQueryImplementation = jest.fn().mockImplementation((_query: string, _parameters: any[]) => ({
+    const mockQueryImplementation = jest.fn().mockImplementation(() => ({
       rows: validRows,
     }));
     // @ts-ignore
@@ -33,13 +33,6 @@ describe('handles http queries for latest transactions for single dataFeedIds', 
     );
     expect(initDb).toHaveBeenCalledTimes(1);
     expect(mockQueryImplementation).toHaveBeenCalledTimes(1);
-    expect(mockQueryImplementation).toHaveBeenCalledWith(lastTransactionsQueryTemplate, [
-      queryStringParameters.chainId,
-      queryStringParameters.beaconId,
-      DEFAULT_TRANSACTION_COUNT,
-    ]);
-
-    expect(result).toBeDefined();
 
     expect(result?.statusCode).toEqual(200);
     expect(result?.body).toEqual(JSON.stringify(validRows));
@@ -47,7 +40,7 @@ describe('handles http queries for latest transactions for single dataFeedIds', 
 
   it('indicates a 400 status code for an empty response', async () => {
     const initDb = jest.spyOn(database, 'initDb');
-    const mockQueryImplementation = jest.fn().mockImplementation((_query: string, _parameters: any[]) => ({
+    const mockQueryImplementation = jest.fn().mockImplementation(() => ({
       rows: [],
     }));
     // @ts-ignore
@@ -67,47 +60,6 @@ describe('handles http queries for latest transactions for single dataFeedIds', 
     );
     expect(initDb).toHaveBeenCalledTimes(1);
     expect(mockQueryImplementation).toHaveBeenCalledTimes(1);
-    expect(mockQueryImplementation).toHaveBeenCalledWith(lastTransactionsQueryTemplate, [
-      queryStringParameters.chainId,
-      queryStringParameters.beaconId,
-      DEFAULT_TRANSACTION_COUNT,
-    ]);
-
-    expect(result).toBeDefined();
-
-    expect(result?.statusCode).toEqual(400);
-    expect(result?.body).toEqual(`{"error":"Empty results returned from data warehouse"}`);
-  });
-
-  it('indicates a 400 status code for an empty response', async () => {
-    const initDb = jest.spyOn(database, 'initDb');
-    const mockQueryImplementation = jest.fn().mockImplementation((_query: string, _parameters: any[]) => ({
-      rows: [],
-    }));
-    // @ts-ignore
-    initDb.mockReturnValue({ query: mockQueryImplementation });
-
-    const queryStringParameters = {
-      chainId: '30',
-      beaconId: '0x09a5873667837598bd0990ba2f53d750d545ce435ecdcd44e0b4c64ab7d7d20d',
-    };
-
-    const result = await lastTransactions(
-      {
-        queryStringParameters,
-      } as unknown as APIGatewayProxyEvent,
-      {} as unknown as Context,
-      () => {}
-    );
-    expect(initDb).toHaveBeenCalledTimes(1);
-    expect(mockQueryImplementation).toHaveBeenCalledTimes(1);
-    expect(mockQueryImplementation).toHaveBeenCalledWith(lastTransactionsQueryTemplate, [
-      queryStringParameters.chainId,
-      queryStringParameters.beaconId,
-      DEFAULT_TRANSACTION_COUNT,
-    ]);
-
-    expect(result).toBeDefined();
 
     expect(result?.statusCode).toEqual(400);
     expect(result?.body).toEqual(`{"error":"Empty results returned from data warehouse"}`);
@@ -131,7 +83,6 @@ describe('handles http queries for latest transactions for single dataFeedIds', 
       () => {}
     );
     expect(initDb).toHaveBeenCalledTimes(0);
-    expect(result).toBeDefined();
 
     expect(result?.statusCode).toEqual(400);
     expect(result?.body).toEqual(`{"error":"Invalid beaconId"}`);
@@ -145,7 +96,7 @@ describe('handles http queries for latest transactions for dAPIs', () => {
     );
 
     const initDb = jest.spyOn(database, 'initDb');
-    const mockQueryImplementation = jest.fn().mockImplementation((_query: string, _parameters: any[]) => ({
+    const mockQueryImplementation = jest.fn().mockImplementation(() => ({
       rows: validDataFeedIdRows,
     }));
     const mockedDatabaseClient = { query: mockQueryImplementation };
@@ -179,13 +130,6 @@ describe('handles http queries for latest transactions for dAPIs', () => {
     expect(getDataFeedIdFromDapiNameSpy).toHaveBeenCalledTimes(1);
     expect(getDataFeedIdFromDapiNameSpy).toHaveBeenCalledWith(dapiName, chainId, mockedDatabaseClient);
     expect(mockQueryImplementation).toHaveBeenCalledTimes(1);
-    expect(mockQueryImplementation).toHaveBeenCalledWith(lastTransactionsQueryTemplate, [
-      queryStringParameters.chainId,
-      beaconId,
-      DEFAULT_TRANSACTION_COUNT,
-    ]);
-
-    expect(result).toBeDefined();
 
     expect(result?.statusCode).toEqual(200);
     expect(result?.body).toEqual(JSON.stringify(validDataFeedIdRows));
@@ -197,7 +141,7 @@ describe('handles http queries for latest transactions for dAPIs', () => {
     );
 
     const initDb = jest.spyOn(database, 'initDb');
-    const mockQueryImplementation = jest.fn().mockImplementation((_query: string, _parameters: any[]) => ({
+    const mockQueryImplementation = jest.fn().mockImplementation(() => ({
       rows: validDataFeedIdRows,
     }));
     const mockedDatabaseClient = { query: mockQueryImplementation };
@@ -230,8 +174,6 @@ describe('handles http queries for latest transactions for dAPIs', () => {
     expect(getDataFeedIdFromDapiNameSpy).toHaveBeenCalledTimes(1);
     expect(getDataFeedIdFromDapiNameSpy).toHaveBeenCalledWith(dapiName, chainId, mockedDatabaseClient);
     expect(mockQueryImplementation).toHaveBeenCalledTimes(0);
-
-    expect(result).toBeDefined();
 
     expect(result?.statusCode).toEqual(400);
     expect(result?.body).toEqual(`{"error":"Could not find the chainId from the provided dapiName"}`);

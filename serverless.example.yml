@@ -49,11 +49,7 @@ functions:
       - http:
           path: beacons/on_chain_value
           method: get
-          # Functions often require an associated CORS OPTIONS method enabled on the API gateway to satisfy Chrome pre-flight
-          # requests. An OPTIONS method is generally not required for GET requests but is always required by Chrome for
-          # POST requests.
-          #
-          # More info available here: https://www.serverless.com/blog/cors-api-gateway-survival-guide/
+          # Enable CORS for every endpoint. Based on https://www.serverless.com/blog/cors-api-gateway-survival-guide/
           cors:
             headers: '*'
             origin: 'http://domain-one.com,https://domain-two.com'
@@ -133,7 +129,7 @@ functions:
               - OPTIONS
               - GET
           caching:
-            enabled: false
+            enabled: true
             ttlInSeconds: 120
             cacheKeyParameters:
               - name: request.path.chainId

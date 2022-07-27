@@ -11,7 +11,7 @@ describe('handles http queries for on-chain-value for single dataFeedIds', () =>
     );
 
     const initDb = jest.spyOn(database, 'initDb');
-    const mockQueryImplementation = jest.fn().mockImplementation((_query: string, _parameters: any[]) => ({
+    const mockQueryImplementation = jest.fn().mockImplementation(() => ({
       rows: [{ data }],
     }));
     // @ts-ignore
@@ -35,8 +35,6 @@ describe('handles http queries for on-chain-value for single dataFeedIds', () =>
       queryStringParameters.chainId,
       queryStringParameters.dataFeedId,
     ]);
-
-    expect(result).toBeDefined();
 
     expect(result?.statusCode).toEqual(200);
     expect(result?.body).toEqual(`{"beaconResponse":[{"hex":"0x0d9a1ece3a7ef800","type":"BigNumber"},926163856]}`);

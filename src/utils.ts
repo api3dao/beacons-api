@@ -32,6 +32,6 @@ interface FilePayload {
 
 export const debugLog = (...args: any[]) => {
   if (process.env.DEBUG) {
-    debugLog(args);
+    console.debug(args);
   }
 };

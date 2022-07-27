@@ -10,18 +10,7 @@ export const dapiNameSchema = z.string();
 export const evmBeaconIdSchema = z.string().regex(/^0x[a-fA-F0-9]{64}$/);
 export const chainIdSchema = z.string().regex(/^\d+$/);
 
-export const DEFAULT_TRANSACTION_COUNT = 40;
-export const lastTransactionsQueryTemplate = `
-    SELECT 
-    event_data -> 'blockNumber' as "blockNumber", 
-    event_data -> 'parsedLog' as "parsedLog",
-    event_data -> 'topics' as "topics",
-    event_data -> 'transactionHash' as "transactionHash"
-    FROM dapi_events 
-    WHERE chain = $1 AND 
-    event_data->'parsedLog'->'args'->> 0 = $2
-    ORDER by block DESC LIMIT $3;
-  `;
+export const TRANSACTION_COUNT = 40;
 
 const config = getGlobalConfig();
 
@@ -83,10 +72,23 @@ export const lastTransactions: APIGatewayProxyHandler = async (event): Promise<A
     };
   }
 
-  const queryTransactionCountLimit = DEFAULT_TRANSACTION_COUNT;
+  const queryTransactionCountLimit = TRANSACTION_COUNT;
 
   const operation = async () =>
-    db.query(lastTransactionsQueryTemplate, [queryChainId, queryBeaconId, queryTransactionCountLimit]);
+    db.query(
+      `
+    SELECT 
+    event_data -> 'blockNumber' as "blockNumber", 
+    event_data -> 'parsedLog' as "parsedLog",
+    event_data -> 'topics' as "topics",
+    event_data -> 'transactionHash' as "transactionHash"
+    FROM dapi_events 
+    WHERE chain = $1 AND 
+    event_data->'parsedLog'->'args'->> 0 = $2
+    ORDER by block DESC LIMIT $3;
+  `,
+      [queryChainId, queryBeaconId, queryTransactionCountLimit]
+    );
 
   const goResponse = await go(operation, goQueryConfig);
   if (!goResponse.success) {
