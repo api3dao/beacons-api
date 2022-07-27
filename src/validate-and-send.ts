@@ -3,7 +3,7 @@ import { go } from '@api3/promise-utils';
 import { APIGatewayProxyHandler } from 'aws-lambda';
 import { z } from 'zod';
 import { Client } from '@sendgrid/client';
-// There doesn't appear to be a way around `require` here
+// There doesn't seem to be a way around `require` here
 import sgMail = require('@sendgrid/mail');
 import { debugLog, getGlobalConfig } from './utils';
 import { contactUsPayloadSchema } from './validation/validate-and-send-form-data';
