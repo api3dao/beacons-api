@@ -7,7 +7,7 @@ export const doTimeout = (interval: number) => new Promise((resolve) => setTimeo
 export const makeError = (error: string) => JSON.stringify({ error });
 
 export const exit = (code = 0) => {
-  console.log(`Exiting, code: ${code}`);
+  debugLog(`Exiting, code: ${code}`);
   process.exit(code);
 };
 
@@ -29,3 +29,9 @@ export const readJsonDirectoryAsArray = (directoryPath: string): FilePayload[] =
 interface FilePayload {
   readonly filename: string;
 }
+
+export const debugLog = (...args: any[]) => {
+  if (process.env.DEBUG) {
+    console.debug(args);
+  }
+};

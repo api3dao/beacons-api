@@ -1,0 +1,126 @@
+[
+  {
+    "blockNumber": 4471902,
+    "parsedLog": {
+      "args": [
+        "0x09a5873667837598bd0990ba2f53d750d545ce435ecdcd44e0b4c64ab7d7d20d",
+        {
+          "hex": "0x0f90f5cb213c00",
+          "type": "BigNumber"
+        },
+        {
+          "hex": "0x62d13e29",
+          "type": "BigNumber"
+        }
+      ],
+      "name": "UpdatedBeaconWithSignedData",
+      "topic": "0x403078446dab7471f481ca4bffac706bd84a6dba118980d267676c096f2ba924",
+      "signature": "UpdatedBeaconWithSignedData(bytes32,int256,uint256)",
+      "eventFragment": {
+        "name": "UpdatedBeaconWithSignedData",
+        "type": "event",
+        "inputs": [
+          {
+            "name": "beaconId",
+            "type": "bytes32",
+            "indexed": true,
+            "baseType": "bytes32",
+            "components": null,
+            "arrayLength": null,
+            "_isParamType": true,
+            "arrayChildren": null
+          },
+          {
+            "name": "value",
+            "type": "int256",
+            "indexed": false,
+            "baseType": "int256",
+            "components": null,
+            "arrayLength": null,
+            "_isParamType": true,
+            "arrayChildren": null
+          },
+          {
+            "name": "timestamp",
+            "type": "uint256",
+            "indexed": false,
+            "baseType": "uint256",
+            "components": null,
+            "arrayLength": null,
+            "_isParamType": true,
+            "arrayChildren": null
+          }
+        ],
+        "anonymous": false,
+        "_isFragment": true
+      }
+    },
+    "topics": [
+      "0x403078446dab7471f481ca4bffac706bd84a6dba118980d267676c096f2ba924",
+      "0x09a5873667837598bd0990ba2f53d750d545ce435ecdcd44e0b4c64ab7d7d20d"
+    ],
+    "transactionHash": "0x2f0001237f6f24dad2cf62b6e413966bf5622f6c9cb338e6a3a966415829389a"
+  },
+  {
+    "blockNumber": 4471379,
+    "parsedLog": {
+      "args": [
+        "0x09a5873667837598bd0990ba2f53d750d545ce435ecdcd44e0b4c64ab7d7d20d",
+        {
+          "hex": "0x0fbc7d116dc400",
+          "type": "BigNumber"
+        },
+        {
+          "hex": "0x62d0fc6b",
+          "type": "BigNumber"
+        }
+      ],
+      "name": "UpdatedBeaconWithSignedData",
+      "topic": "0x403078446dab7471f481ca4bffac706bd84a6dba118980d267676c096f2ba924",
+      "signature": "UpdatedBeaconWithSignedData(bytes32,int256,uint256)",
+      "eventFragment": {
+        "name": "UpdatedBeaconWithSignedData",
+        "type": "event",
+        "inputs": [
+          {
+            "name": "beaconId",
+            "type": "bytes32",
+            "indexed": true,
+            "baseType": "bytes32",
+            "components": null,
+            "arrayLength": null,
+            "_isParamType": true,
+            "arrayChildren": null
+          },
+          {
+            "name": "value",
+            "type": "int256",
+            "indexed": false,
+            "baseType": "int256",
+            "components": null,
+            "arrayLength": null,
+            "_isParamType": true,
+            "arrayChildren": null
+          },
+          {
+            "name": "timestamp",
+            "type": "uint256",
+            "indexed": false,
+            "baseType": "uint256",
+            "components": null,
+            "arrayLength": null,
+            "_isParamType": true,
+            "arrayChildren": null
+          }
+        ],
+        "anonymous": false,
+        "_isFragment": true
+      }
+    },
+    "topics": [
+      "0x403078446dab7471f481ca4bffac706bd84a6dba118980d267676c096f2ba924",
+      "0x09a5873667837598bd0990ba2f53d750d545ce435ecdcd44e0b4c64ab7d7d20d"
+    ],
+    "transactionHash": "0x23022d8500c05a9b762aa39994cfc4d1d16aa5bcd764221b65591debc1c55181"
+  }
+]

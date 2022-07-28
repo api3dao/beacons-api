@@ -49,6 +49,13 @@ functions:
       - http:
           path: beacons/on_chain_value
           method: get
+          # Enable CORS for every endpoint. Based on https://www.serverless.com/blog/cors-api-gateway-survival-guide/
+          cors:
+            headers: '*'
+            origin: 'http://domain-one.com,https://domain-two.com'
+            methods:
+              - OPTIONS
+              - GET
           caching:
             enabled: true
             ttlInSeconds: 120
@@ -61,11 +68,17 @@ functions:
   last_transactions:
     handler: src/last-transactions.lastTransactions
     timeout: 30
-    memorySize: 256
+    memorySize: 128
     events:
       - http:
           path: beacons/last_transactions
           method: get
+          cors:
+            headers: '*'
+            origin: '*'
+            methods:
+              - OPTIONS
+              - GET
           caching:
             enabled: true
             ttlInSeconds: 120
@@ -73,7 +86,7 @@ functions:
               - name: request.path.chainId
               - name: request.path.beaconId
               - name: request.path.dapiName
-              - name: request.path.transactionCount
+
   coin_value:
     handler: src/coin-value.coinValue
     timeout: 30
@@ -82,17 +95,25 @@ functions:
       - http:
           path: beacons/coin_value
           method: get
+          cors:
+            headers: '*'
+            origin: 'http://domain-one.com,https://domain-two.com'
+            methods:
+              - OPTIONS
+              - GET
           caching:
             enabled: true
-            ttlInSeconds: 120
+            ttlInSeconds: 60
             cacheKeyParameters:
               - name: request.path.symbol
+
   coin_value_refresh:
     handler: src/coin-value-refresh.coinValueRefresh
     timeout: 30
     memorySize: 128
     events:
-      - schedule: rate(10 minutes)
+      - schedule: rate(1 minute)
+
   volatility:
     handler: src/volatility.getVolatility
     timeout: 30
@@ -101,9 +122,30 @@ functions:
       - http:
           path: beacons/volatility
           method: get
+          cors:
+            headers: '*'
+            origin: 'http://domain-one.com,https://domain-two.com'
+            methods:
+              - OPTIONS
+              - GET
           caching:
             enabled: true
             ttlInSeconds: 120
             cacheKeyParameters:
               - name: request.path.chainId
               - name: request.path.beaconId
+  validateAndSendEmail:
+    handler: src/validate-and-send.validateAndSendEmail
+    timeout: 20
+    memorySize: 128
+    events:
+      - http:
+          path: /contactus
+          method: post
+          private: false
+          cors:
+            headers: '*'
+            origin: 'http://domain-one.com,https://domain-two.com'
+            methods:
+              - OPTIONS
+              - POST

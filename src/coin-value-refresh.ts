@@ -5,6 +5,7 @@ import { Client } from 'pg';
 import { goQueryConfig } from './constants';
 import { initDb } from './database';
 import { CoinGeckoApiResult } from './types';
+import { debugLog } from './utils';
 
 const ensureTablesCreated = async (db: Client) => {
   const operation = async () =>
@@ -139,5 +140,5 @@ export const coinValueRefresh: ScheduledHandler = async (): Promise<any> => {
     return;
   }
 
-  console.log('Values updated successfully');
+  debugLog('Values updated successfully');
 };

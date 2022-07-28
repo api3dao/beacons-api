@@ -1,0 +1,20 @@
+{
+  "providers": {
+    "1": ""
+  },
+  "opsGenieConfig": {
+    "responders": [
+      {
+        "type": "team",
+        "id": "something"
+      }
+    ]
+  },
+  "headers": {
+    "Access-Control-Allow-Origin": "*",
+    "Cross-Origin-Resource-Policy": "cross-origin",
+    "Access-Control-Allow-Methods": "*",
+    "Access-Control-Allow-Credentials": true,
+    "content-type": "application/json"
+  }
+}
