@@ -6,16 +6,6 @@ import { initDb } from './database';
 import { goQueryConfig } from './constants';
 import { getDataFeedIdFromDapiName } from './dapi-names';
 
-export const onChainValueQueryTemplate = `
-      SELECT jsonb_path_query_array(event_data -> 'parsedLog' -> 'args' , '$[1 to 2]') as "data"
-      FROM dapi_events 
-      WHERE 
-      chain = $1 AND
-      event_data->'parsedLog'->'args'->>0 = $2
-      ORDER by block DESC 
-      LIMIT 1;
-    `;
-
 const config = getGlobalConfig();
 
 export const chainValueDataPoint: APIGatewayProxyHandler = async (event): Promise<any> => {
@@ -60,7 +50,20 @@ export const chainValueDataPoint: APIGatewayProxyHandler = async (event): Promis
     };
   }
 
-  const operation = async () => db.query(onChainValueQueryTemplate, [chainId, currentDataFeedId]);
+  const operation = async () =>
+    db.query(
+      `
+      SELECT jsonb_path_query_array(event_data -> 'parsedLog' -> 'args' , '$[1 to 2]') as "data"
+      FROM dapi_events 
+      WHERE 
+      chain = $1 AND
+      event_name IN ('UpdatedBeaconWithSignedData', 'UpdatedBeaconWithPsp', 'UpdatedBeaconWithRrp', 'UpdatedBeaconSetWithBeacons', 'UpdatedBeaconSetWithSignedData') AND
+      event_data->'parsedLog'->'args'->>0 = $2
+      ORDER by block DESC 
+      LIMIT 1;
+    `,
+      [chainId, currentDataFeedId]
+    );
 
   const goResponse = await go(operation, goQueryConfig);
   if (!goResponse.success) {
