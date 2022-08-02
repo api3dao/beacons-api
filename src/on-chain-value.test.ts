@@ -2,7 +2,7 @@ import * as fs from 'fs';
 import path from 'path';
 import { APIGatewayProxyEvent, Context } from 'aws-lambda';
 import * as database from './database';
-import { chainValueDataPoint, onChainValueQueryTemplate } from './on-chain-value';
+import { chainValueDataPoint } from './on-chain-value';
 
 describe('handles http queries for on-chain-value for single dataFeedIds', () => {
   it('responds to a valid query', async () => {
@@ -31,10 +31,6 @@ describe('handles http queries for on-chain-value for single dataFeedIds', () =>
     );
     expect(initDb).toHaveBeenCalledTimes(1);
     expect(mockQueryImplementation).toHaveBeenCalledTimes(1);
-    expect(mockQueryImplementation).toHaveBeenCalledWith(onChainValueQueryTemplate, [
-      queryStringParameters.chainId,
-      queryStringParameters.dataFeedId,
-    ]);
 
     expect(result?.statusCode).toEqual(200);
     expect(result?.body).toEqual(`{"beaconResponse":[{"hex":"0x0d9a1ece3a7ef800","type":"BigNumber"},926163856]}`);

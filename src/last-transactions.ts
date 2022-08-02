@@ -84,6 +84,7 @@ export const lastTransactions: APIGatewayProxyHandler = async (event): Promise<A
     event_data -> 'transactionHash' as "transactionHash"
     FROM dapi_events 
     WHERE chain = $1 AND 
+    event_name IN ('UpdatedBeaconWithSignedData', 'UpdatedBeaconWithPsp', 'UpdatedBeaconWithRrp', 'UpdatedBeaconSetWithBeacons', 'UpdatedBeaconSetWithSignedData') AND
     event_data->'parsedLog'->'args'->> 0 = $2
     ORDER by block DESC LIMIT $3;
   `,

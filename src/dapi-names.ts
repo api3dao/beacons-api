@@ -12,13 +12,13 @@ export const getDataFeedIdFromDapiName = async (dapiName: string, chainId: strin
     SELECT event_data->'parsedLog'->'args'->> 1 as "dataFeedId"
     FROM dapi_events 
     WHERE 
-    chainId = $1 AND
+    chain = $1 AND
     event_name = 'SetDapiName' AND 
-    event_data->'parsedLog'->'args'->> 0 = $1 
+    event_data->'parsedLog'->'args'->> 0 = $2 
     ORDER BY block DESC
     LIMIT 1;
   `,
-      [chainId, hashedDapiNameId]
+      [parseInt(chainId), hashedDapiNameId]
     );
 
   const goResponse = await go(operation, goQueryConfig);
