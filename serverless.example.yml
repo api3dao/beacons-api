@@ -86,6 +86,7 @@ functions:
               - name: request.path.chainId
               - name: request.path.beaconId
               - name: request.path.dapiName
+              - name: request.path.transactionCountLimit
 
   coin_value:
     handler: src/coin-value.coinValue
