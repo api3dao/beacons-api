@@ -12,6 +12,7 @@ export const chainIdSchema = z.string().regex(/^\d+$/);
 export const transactionCountLimitSchema = z.string().regex(/^\d+$/);
 
 export const DEFAULT_TRANSACTION_COUNT_LIMIT = 40;
+export const MAX_TRANSACTION_COUNT_LIMIT = 720;
 
 const config = getGlobalConfig();
 
@@ -82,7 +83,9 @@ export const lastTransactions: APIGatewayProxyHandler = async (event): Promise<A
   }
 
   const queryTransactionCountLimit = parsedTransactionCountLimit.success
-    ? parseInt(parsedTransactionCountLimit.data)
+    ? parseInt(parsedTransactionCountLimit.data) > MAX_TRANSACTION_COUNT_LIMIT
+      ? MAX_TRANSACTION_COUNT_LIMIT
+      : parseInt(parsedTransactionCountLimit.data)
     : DEFAULT_TRANSACTION_COUNT_LIMIT;
 
   const operation = async () =>
@@ -96,7 +99,8 @@ export const lastTransactions: APIGatewayProxyHandler = async (event): Promise<A
     FROM dapi_events 
     WHERE chain = $1 AND 
     event_name IN ('UpdatedBeaconWithSignedData', 'UpdatedBeaconWithPsp', 'UpdatedBeaconWithRrp', 'UpdatedBeaconSetWithBeacons', 'UpdatedBeaconSetWithSignedData') AND
-    event_data->'parsedLog'->'args'->> 0 = $2
+    event_data->'parsedLog'->'args'->> 0 = $2 AND
+    time > NOW() - INTERVAL '12 HOURS'
     ORDER by block DESC LIMIT $3;
   `,
       [queryChainId, queryBeaconId, queryTransactionCountLimit]
