@@ -22,7 +22,6 @@ describe('handles http queries for latest transactions for single dataFeedIds', 
     const queryStringParameters = {
       chainId: '30',
       beaconId: '0x09a5873667837598bd0990ba2f53d750d545ce435ecdcd44e0b4c64ab7d7d20d',
-      transactionCountLimit: '40',
     };
 
     const result = await lastTransactions(
@@ -87,30 +86,6 @@ describe('handles http queries for latest transactions for single dataFeedIds', 
 
     expect(result?.statusCode).toEqual(400);
     expect(result?.body).toEqual(`{"error":"Invalid beaconId"}`);
-  });
-
-  it('returns a 400 status code for invalid transactionCountLimit', async () => {
-    const initDb = jest.spyOn(database, 'initDb');
-    // @ts-ignore
-    initDb.mockReturnValue({});
-
-    const queryStringParameters = {
-      chainId: '137',
-      beaconId: '0x09a5873667837598bd0990ba2f53d750d545ce435ecdcd44e0b4c64ab7d7d20d',
-      transactionCountLimit: 'limit',
-    };
-
-    const result = await lastTransactions(
-      {
-        queryStringParameters,
-      } as unknown as APIGatewayProxyEvent,
-      {} as unknown as Context,
-      () => {}
-    );
-    expect(initDb).toHaveBeenCalledTimes(0);
-
-    expect(result?.statusCode).toEqual(400);
-    expect(result?.body).toEqual(`{"error":"Invalid transactionCountLimit"}`);
   });
 });
 

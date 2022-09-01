@@ -9,15 +9,13 @@ import { getDataFeedIdFromDapiName } from './dapi-names';
 export const dapiNameSchema = z.string();
 export const evmBeaconIdSchema = z.string().regex(/^0x[a-fA-F0-9]{64}$/);
 export const chainIdSchema = z.string().regex(/^\d+$/);
-export const transactionCountLimitSchema = z.string().regex(/^\d+$/);
 
-export const DEFAULT_TRANSACTION_COUNT_LIMIT = 40;
 export const MAX_TRANSACTION_COUNT_LIMIT = 720;
 
 const config = getGlobalConfig();
 
 export const lastTransactions: APIGatewayProxyHandler = async (event): Promise<APIGatewayProxyResult> => {
-  const { chainId, beaconId, dapiName, transactionCountLimit } = event.queryStringParameters ?? {};
+  const { chainId, beaconId, dapiName } = event.queryStringParameters ?? {};
 
   if (!(dapiName || beaconId)) {
     return {
@@ -51,14 +49,6 @@ export const lastTransactions: APIGatewayProxyHandler = async (event): Promise<A
       body: makeError('Invalid dapiName'),
     };
   }
-  const parsedTransactionCountLimit = transactionCountLimitSchema.safeParse(transactionCountLimit);
-  if (transactionCountLimit && !parsedTransactionCountLimit.success) {
-    return {
-      statusCode: 400,
-      headers: config.headers,
-      body: makeError('Invalid transactionCountLimit'),
-    };
-  }
 
   const db = await initDb();
   if (db === undefined) {
@@ -82,12 +72,6 @@ export const lastTransactions: APIGatewayProxyHandler = async (event): Promise<A
     };
   }
 
-  const queryTransactionCountLimit = parsedTransactionCountLimit.success
-    ? parseInt(parsedTransactionCountLimit.data) > MAX_TRANSACTION_COUNT_LIMIT
-      ? MAX_TRANSACTION_COUNT_LIMIT
-      : parseInt(parsedTransactionCountLimit.data)
-    : DEFAULT_TRANSACTION_COUNT_LIMIT;
-
   const operation = async () =>
     db.query(
       `
@@ -103,7 +87,7 @@ export const lastTransactions: APIGatewayProxyHandler = async (event): Promise<A
     time > NOW() - INTERVAL '12 HOURS'
     ORDER by block DESC LIMIT $3;
   `,
-      [queryChainId, queryBeaconId, queryTransactionCountLimit]
+      [queryChainId, queryBeaconId, MAX_TRANSACTION_COUNT_LIMIT]
     );
 
   const goResponse = await go(operation, goQueryConfig);
