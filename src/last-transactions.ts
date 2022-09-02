@@ -10,7 +10,7 @@ export const dapiNameSchema = z.string();
 export const evmBeaconIdSchema = z.string().regex(/^0x[a-fA-F0-9]{64}$/);
 export const chainIdSchema = z.string().regex(/^\d+$/);
 
-export const TRANSACTION_COUNT = 40;
+export const MAX_TRANSACTION_COUNT_LIMIT = 720;
 
 const config = getGlobalConfig();
 
@@ -72,8 +72,6 @@ export const lastTransactions: APIGatewayProxyHandler = async (event): Promise<A
     };
   }
 
-  const queryTransactionCountLimit = TRANSACTION_COUNT;
-
   const operation = async () =>
     db.query(
       `
@@ -85,10 +83,11 @@ export const lastTransactions: APIGatewayProxyHandler = async (event): Promise<A
     FROM dapi_events 
     WHERE chain = $1 AND 
     event_name IN ('UpdatedBeaconWithSignedData', 'UpdatedBeaconWithPsp', 'UpdatedBeaconWithRrp', 'UpdatedBeaconSetWithBeacons', 'UpdatedBeaconSetWithSignedData') AND
-    event_data->'parsedLog'->'args'->> 0 = $2
+    event_data->'parsedLog'->'args'->> 0 = $2 AND
+    time > NOW() - INTERVAL '12 HOURS'
     ORDER by block DESC LIMIT $3;
   `,
-      [queryChainId, queryBeaconId, queryTransactionCountLimit]
+      [queryChainId, queryBeaconId, MAX_TRANSACTION_COUNT_LIMIT]
     );
 
   const goResponse = await go(operation, goQueryConfig);
