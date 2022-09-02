@@ -84,7 +84,7 @@ export const lastTransactions: APIGatewayProxyHandler = async (event): Promise<A
     WHERE chain = $1 AND 
     event_name IN ('UpdatedBeaconWithSignedData', 'UpdatedBeaconWithPsp', 'UpdatedBeaconWithRrp', 'UpdatedBeaconSetWithBeacons', 'UpdatedBeaconSetWithSignedData') AND
     event_data->'parsedLog'->'args'->> 0 = $2 AND
-    time > NOW() - INTERVAL '12 HOURS'
+    time > NOW() - INTERVAL '25 HOURS'
     ORDER by block DESC LIMIT $3;
   `,
       [queryChainId, queryBeaconId, MAX_TRANSACTION_COUNT_LIMIT]
